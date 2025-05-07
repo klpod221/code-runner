@@ -16,7 +16,7 @@ const languageRoutes = require("./routes/language.routes");
 const healthRoutes = require("./routes/health.routes");
 const settingsRoutes = require("./routes/settings.routes");
 const { sequelize } = require("./models");
-const { initLanguages } = require("./config/dbInit");
+const { initLanguages } = require("./config/languagesInit");
 const { initSettings } = require("./config/settingsInit");
 
 // Initialize express app

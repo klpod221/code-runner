@@ -12,6 +12,22 @@ const settingsService = require("./settings.service");
 const DEFAULT_RETENTION_DAYS = 7; // 7 days by default
 
 /**
+ * Save cleanup statistics to settings
+ * 
+ * @param {Object} stats - Cleanup statistics to save
+ * @returns {Promise<void>}
+ */
+async function saveCleanupStats(stats) {
+  try {
+    await settingsService.updateSetting("LAST_CLEANUP_DATE", new Date().toISOString(), "system");
+    await settingsService.updateSetting("LAST_CLEANUP_EXECUTIONS_DELETED", stats.deletedExecutions.toString(), "system");
+    await settingsService.updateSetting("LAST_CLEANUP_TESTCASES_DELETED", stats.deletedTestCases.toString(), "system");
+  } catch (error) {
+    console.error('Error saving cleanup statistics:', error);
+  }
+}
+
+/**
  * Delete old code executions and their associated test cases
  * 
  * @param {Object} options - Cleanup options
@@ -89,6 +105,9 @@ async function cleanupOldExecutions({
       
       // Then delete executions
       deletedExecutions = await CodeExecution.destroy({ where: whereClause });
+      
+      // Save cleanup statistics to settings if actual deletion was performed
+      await saveCleanupStats({ deletedExecutions, deletedTestCases });
     }
     
     // Return statistics

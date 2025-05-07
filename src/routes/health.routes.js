@@ -55,6 +55,45 @@ router.get("/db", healthController.checkDbHealth);
 
 /**
  * @swagger
+ * /health/languages:
+ *   get:
+ *     summary: Check programming languages health
+ *     description: Checks if all the supported programming languages are available in the container
+ *     tags: [Health]
+ *     security: []
+ *     responses:
+ *       200:
+ *         description: Languages health status
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: healthy
+ *                 timestamp:
+ *                   type: string
+ *                   format: date-time
+ *                 languages:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       name:
+ *                         type: string
+ *                         example: nodejs
+ *                       status:
+ *                         type: string
+ *                         example: available
+ *                       version:
+ *                         type: string
+ *                         example: v20.10.0
+ */
+router.get("/languages", healthController.checkLanguagesHealth);
+
+/**
+ * @swagger
  * /health/full:
  *   get:
  *     summary: Check full system health

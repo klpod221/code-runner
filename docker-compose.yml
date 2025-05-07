@@ -3,6 +3,12 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        - NODEJS_VERSION=${NODEJS_VERSION}
+        - PYTHON_VERSION=${PYTHON_VERSION}
+        - JAVA_VERSION=${JAVA_VERSION}
+        - CPP_VERSION=${CPP_VERSION}
+        - C_VERSION=${C_VERSION}
     container_name: code_runner_api
     ports:
       - "3000:3000"

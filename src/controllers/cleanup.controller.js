@@ -1,4 +1,5 @@
 const { cleanupOldExecutions } = require("../services/cleanup.service");
+const settingsService = require("../services/settings.service");
 
 /**
  * Controller for cleanup operations
@@ -63,15 +64,24 @@ exports.manualCleanup = async (req, res) => {
  */
 exports.getCleanupConfig = async (req, res) => {
   try {
+    // Retrieve settings from the settings service
+    const retentionDays = await settingsService.getNumericSetting("CODE_EXECUTION_RETENTION_DAYS", 7);
+    const cronSchedule = await settingsService.getSetting("CLEANUP_CRON_SCHEDULE", '0 0 * * *');
+    const cleanupEnabled = await settingsService.getBooleanSetting("ENABLE_AUTO_CLEANUP", true);
+    
+    // Retrieve last cleanup stats from settings (if available)
+    const lastCleanupDate = await settingsService.getSetting("LAST_CLEANUP_DATE", null);
+    const lastExecutionsDeleted = await settingsService.getNumericSetting("LAST_CLEANUP_EXECUTIONS_DELETED", 0);
+    const lastTestCasesDeleted = await settingsService.getNumericSetting("LAST_CLEANUP_TESTCASES_DELETED", 0);
+    
     const config = {
-      retentionDays: parseInt(process.env.CODE_EXECUTION_RETENTION_DAYS) || 7,
-      cronSchedule: process.env.CLEANUP_CRON_SCHEDULE || '0 0 * * *', // Default: daily at midnight
-      cleanupEnabled: process.env.ENABLE_AUTO_CLEANUP !== 'false', // Enabled by default unless explicitly disabled
+      retentionDays,
+      cronSchedule,
+      cleanupEnabled,
       lastCleanupStats: {
-        // This would ideally come from a database or cache, but for now returning placeholder
-        lastRun: null,
-        executionsDeleted: 0, 
-        testCasesDeleted: 0
+        lastRun: lastCleanupDate ? new Date(lastCleanupDate) : null,
+        executionsDeleted: lastExecutionsDeleted, 
+        testCasesDeleted: lastTestCasesDeleted
       }
     };
     

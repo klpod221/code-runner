@@ -1,5 +1,7 @@
 const { sequelize } = require("../models");
 const os = require("os");
+const { supportedLanguages } = require("../services/codeExecutor.service");
+const languageHealthService = require("../services/languageHealth.service");
 
 // Check general server health
 exports.checkHealth = async (req, res) => {
@@ -61,6 +63,20 @@ exports.checkDbHealth = async (req, res) => {
   }
 };
 
+// Check programming languages availability
+exports.checkLanguagesHealth = async (req, res) => {
+  try {
+    const languageHealth = await languageHealthService.getLanguageSystemHealth();
+    res.status(200).json(languageHealth);
+  } catch (error) {
+    res.status(500).json({
+      status: "error",
+      message: "Error checking language health",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
+  }
+};
+
 // Check all system components
 exports.checkFullHealth = async (req, res) => {
   try {
@@ -76,6 +92,9 @@ exports.checkFullHealth = async (req, res) => {
       dbMessage = "Database connection failed";
       dbError = error.message;
     }
+    
+    // Check programming languages
+    const languageHealth = await languageHealthService.checkAllLanguagesHealth();
     
     // System metrics
     const totalMemory = os.totalmem();
@@ -101,6 +120,10 @@ exports.checkFullHealth = async (req, res) => {
             host: sequelize.config.host,
             dialect: sequelize.options.dialect,
           }
+        },
+        languages: {
+          status: languageHealth.every(l => l.status === "available") ? "healthy" : "degraded",
+          details: languageHealth
         },
         server: {
           status: "healthy",

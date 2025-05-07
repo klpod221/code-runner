@@ -1,11 +1,11 @@
 const jwt = require("jsonwebtoken");
 const { User, Sequelize } = require("../models");
 const { Op } = Sequelize;
+const settingsService = require("../services/settings.service");
 
 const JWT_SECRET =
   process.env.JWT_SECRET || "your_jwt_secret_key_change_in_production";
 const JWT_EXPIRATION = process.env.JWT_EXPIRATION;
-const ALLOW_REGISTRATION = process.env.ALLOW_REGISTRATION === "true";
 
 /**
  * Generate JWT token for a user
@@ -29,8 +29,11 @@ exports.register = async (req, res) => {
     // Check if this is the first user (to make them admin)
     const userCount = await User.count();
 
+    // Check if registration is allowed from settings
+    const allowRegistration = await settingsService.getBooleanSetting("ALLOW_REGISTRATION", false);
+    
     // If not the first user and registration is disabled, return error
-    if (userCount > 0 && !ALLOW_REGISTRATION) {
+    if (userCount > 0 && !allowRegistration) {
       return res.status(403).json({
         message: "Registration is currently disabled",
       });

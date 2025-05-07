@@ -4,11 +4,39 @@ const { exec } = require("child_process");
 const { v4: uuidv4 } = require("uuid");
 const util = require("util");
 const os = require("os");
+const { settings: Settings } = require("../models");
 
 const execPromise = util.promisify(exec);
 
 // Get base directory for code execution temp files
-const BASE_TEMP_DIR = process.env.CODE_EXECUTION_TEMP_DIR || path.join(os.tmpdir(), "code-execution");
+const BASE_TEMP_DIR = path.join(os.tmpdir(), "code-execution");
+
+// Cache for settings
+let settingsCache = {
+  MAX_EXECUTION_TIME: 10000,
+  MAX_MEMORY: 512
+};
+
+// Function to load settings from database
+async function loadSettings() {
+  try {
+    const dbSettings = await Settings.findAll({
+      where: {
+        key: ['MAX_EXECUTION_TIME', 'MAX_MEMORY']
+      }
+    });
+
+    dbSettings.forEach(setting => {
+      settingsCache[setting.key] = parseInt(setting.value);
+    });
+  } catch (error) {
+    console.error("Failed to load execution settings:", error.message);
+    console.error("Using default values for execution settings");
+  }
+}
+
+// Load settings on startup
+loadSettings();
 
 // Ensure base temp directory exists on startup
 (async () => {
@@ -26,31 +54,31 @@ const languageConfigs = {
     extension: ".js",
     compile: null,
     run: "node",
-    timeout: parseInt(process.env.MAX_EXECUTION_TIME) || 10000,
+    get timeout() { return settingsCache.MAX_EXECUTION_TIME; },
   },
   python: {
     extension: ".py",
     compile: null,
     run: "python3",
-    timeout: parseInt(process.env.MAX_EXECUTION_TIME) || 10000,
+    get timeout() { return settingsCache.MAX_EXECUTION_TIME; },
   },
   java: {
     extension: ".java",
     compile: (file) => `javac ${file}`,
     run: (className) => `java ${className}`,
-    timeout: parseInt(process.env.MAX_EXECUTION_TIME) || 15000,
+    get timeout() { return settingsCache.MAX_EXECUTION_TIME; },
   },
   cpp: {
     extension: ".cpp",
     compile: (file) => `g++ -o ${file.replace(".cpp", "")} ${file}`,
     run: (file) => `./${file.replace(".cpp", "")}`,
-    timeout: parseInt(process.env.MAX_EXECUTION_TIME) || 10000,
+    get timeout() { return settingsCache.MAX_EXECUTION_TIME; },
   },
   c: {
     extension: ".c",
     compile: (file) => `gcc -o ${file.replace(".c", "")} ${file}`,
     run: (file) => `./${file.replace(".c", "")}`,
-    timeout: parseInt(process.env.MAX_EXECUTION_TIME) || 10000,
+    get timeout() { return settingsCache.MAX_EXECUTION_TIME; },
   },
 };
 
@@ -187,7 +215,14 @@ async function executeCode({ language, files, stdin = "", requestId = "unknown" 
         runCmd += ` < input.txt`;
       }
 
-      console.log(`[${executionId}] Executing: ${runCmd}`);
+      // Add memory limit if supported by the OS
+      if (process.platform === 'linux') {
+        // Use ulimit to restrict memory usage (in KB)
+        const memoryLimitKB = settingsCache.MAX_MEMORY * 1024;
+        runCmd = `ulimit -v ${memoryLimitKB} && ${runCmd}`;
+      }
+
+      console.log(`[${executionId}] Executing: ${runCmd} with timeout: ${config.timeout}ms`);
 
       const { stdout, stderr } = await execPromise(runCmd, {
         cwd: tempDir,
@@ -241,7 +276,14 @@ async function executeCode({ language, files, stdin = "", requestId = "unknown" 
   }
 }
 
+// Expose a function to refresh settings
+async function refreshSettings() {
+  await loadSettings();
+  return settingsCache;
+}
+
 module.exports = {
   executeCode,
   supportedLanguages: Object.keys(languageConfigs),
+  refreshSettings
 };

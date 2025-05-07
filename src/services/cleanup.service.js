@@ -1,14 +1,15 @@
 const { Op } = require("sequelize");
 const { CodeExecution, testCase } = require("../models");
 const cron = require("node-cron");
+const settingsService = require("./settings.service");
 
 /**
  * Cleanup service for managing old code executions
  * Automatically removes non-persistent executions after a certain period
  */
 
-// Default retention periods (can be overridden by environment variables)
-const DEFAULT_RETENTION_DAYS = parseInt(process.env.CODE_EXECUTION_RETENTION_DAYS) || 7; // 7 days by default
+// Default retention periods (can be overridden by settings)
+const DEFAULT_RETENTION_DAYS = 7; // 7 days by default
 
 /**
  * Delete old code executions and their associated test cases
@@ -20,11 +21,16 @@ const DEFAULT_RETENTION_DAYS = parseInt(process.env.CODE_EXECUTION_RETENTION_DAY
  * @returns {Promise<Object>} - Statistics about deleted records
  */
 async function cleanupOldExecutions({
-  days = DEFAULT_RETENTION_DAYS,
+  days = null,
   dryRun = false,
   ignorePersistent = false
 } = {}) {
   try {
+    // If days not provided, get from settings
+    if (days === null) {
+      days = await settingsService.getNumericSetting("CODE_EXECUTION_RETENTION_DAYS", DEFAULT_RETENTION_DAYS);
+    }
+    
     console.log(`Starting cleanup of executions older than ${days} days (dry run: ${dryRun})`);
     
     const cutoffDate = new Date();
@@ -102,20 +108,51 @@ async function cleanupOldExecutions({
 }
 
 /**
- * Schedule automatic cleanup of old executions
+ * Validate a cron expression
  * 
- * @param {string} cronExpression - Cron expression for scheduling (default: daily at midnight)
+ * @param {string} cronExpression - The cron expression to validate
+ * @returns {boolean} - True if valid, false otherwise
  */
-function scheduleCleanup(cronExpression = '0 0 * * *') {
+function validateCronExpression(cronExpression) {
+  return cron.validate(cronExpression);
+}
+
+/**
+ * Schedule automatic cleanup of old executions
+ * Uses settings from the database
+ * 
+ * @param {string} cronExpression - Cron expression for scheduling (default: from settings or daily at midnight)
+ */
+async function scheduleCleanup(cronExpression = null) {
+  // If no cron expression provided, get from settings
+  if (!cronExpression) {
+    cronExpression = await settingsService.getSetting("CLEANUP_CRON_SCHEDULE", '0 0 * * *');
+  }
+  
   // Validate cron expression
-  if (!cron.validate(cronExpression)) {
+  if (!validateCronExpression(cronExpression)) {
     console.error(`Invalid cron expression: ${cronExpression}`);
     console.error('Using default schedule: daily at midnight (0 0 * * *)');
     cronExpression = '0 0 * * *';
   }
   
+  // Check if cleanup is enabled
+  const cleanupEnabled = await settingsService.getBooleanSetting("ENABLE_AUTO_CLEANUP", true);
+  
+  if (!cleanupEnabled) {
+    console.log('Automated execution cleanup is disabled in settings');
+    return;
+  }
+  
   cron.schedule(cronExpression, async () => {
     try {
+      // Check again if cleanup is enabled (settings may have changed)
+      const stillEnabled = await settingsService.getBooleanSetting("ENABLE_AUTO_CLEANUP", true);
+      if (!stillEnabled) {
+        console.log('Scheduled cleanup skipped: automation disabled in settings');
+        return;
+      }
+      
       console.log('Running scheduled cleanup of old code executions...');
       const result = await cleanupOldExecutions();
       console.log(`Cleanup completed: ${result.deletedExecutions} executions and ${result.deletedTestCases} test cases deleted`);
@@ -127,5 +164,6 @@ function scheduleCleanup(cronExpression = '0 0 * * *') {
 
 module.exports = {
   cleanupOldExecutions,
-  scheduleCleanup
+  scheduleCleanup,
+  validateCronExpression
 };

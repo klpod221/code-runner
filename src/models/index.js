@@ -29,6 +29,7 @@ db.User = require("./user.model")(sequelize, Sequelize);
 db.CodeExecution = require("./codeExecution.model")(sequelize, Sequelize);
 db.Language = require("./language.model")(sequelize, Sequelize);
 db.testCase = require("./testCase.model.js")(sequelize, Sequelize);
+db.settings = require("./settings.model.js")(sequelize, Sequelize);
 
 // Define associations
 db.User.hasMany(db.CodeExecution, { as: "executions" });

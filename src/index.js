@@ -8,13 +8,16 @@ const swaggerUi = require("swagger-ui-express");
 const swaggerSpecs = require("./config/swagger");
 const requestIdMiddleware = require("./middleware/requestId.middleware");
 const { scheduleCleanup } = require("./services/cleanup.service");
+const settingsService = require("./services/settings.service");
 
 const authRoutes = require("./routes/auth.routes");
 const codeRunnerRoutes = require("./routes/codeRunner.routes");
 const languageRoutes = require("./routes/language.routes");
 const healthRoutes = require("./routes/health.routes");
+const settingsRoutes = require("./routes/settings.routes");
 const { sequelize } = require("./models");
 const { initLanguages } = require("./config/dbInit");
+const { initSettings } = require("./config/settingsInit");
 
 // Initialize express app
 const app = express();
@@ -33,34 +36,17 @@ app.use(
 
 // Configure CORS properly
 const corsOptions = {
-  origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps, curl requests)
-    if (!origin) return callback(null, true);
-    
-    const allowedOrigins = [
-      'http://localhost:3000',
-      'http://localhost:8080',
-      'http://127.0.0.1:3000',
-      'http://127.0.0.1:8080'
-    ];
-    
-    if (allowedOrigins.indexOf(origin) !== -1 || !origin) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
+  origin: true, // This reflects the request origin
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization']
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  exposedHeaders: ["Content-Length", "X-Request-Id"],
 };
-
 app.use(cors(corsOptions));
 
-// Custom logging format that includes the request ID
-morgan.token('requestId', function (req) {
-  return req.id;
-});
+// Request logging with Morgan
+// Register the custom token for request ID
+morgan.token('requestId', (req) => req.id);
 
 app.use(morgan(function (tokens, req, res) {
   return [
@@ -75,13 +61,29 @@ app.use(morgan(function (tokens, req, res) {
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
-// Rate limiting
-const limiter = rateLimit({
-  windowMs: (parseInt(process.env.RATE_LIMIT_WINDOW) || 15) * 60 * 1000, // Convert minutes to milliseconds
-  max: parseInt(process.env.RATE_LIMIT_MAX) || 100,
-  message: "Too many requests from this IP, please try again later",
-});
-app.use(limiter);
+// Dynamic rate limiter that gets settings from the database
+// Will be updated when settings change
+const configureLimiter = async () => {
+  try {
+    const windowMins = await settingsService.getNumericSetting("RATE_LIMIT_WINDOW", 15);
+    const maxRequests = await settingsService.getNumericSetting("RATE_LIMIT_MAX", 100);
+    
+    // Use configured limiter for subsequent requests
+    return rateLimit({
+      windowMs: windowMins * 60 * 1000, // Convert minutes to milliseconds
+      max: maxRequests,
+      message: "Too many requests from this IP, please try again later",
+    });
+  } catch (error) {
+    console.error("Error configuring rate limiter:", error);
+    // Use default limiter if settings can't be loaded
+    return rateLimit({
+      windowMs: 15 * 60 * 1000, // 15 minutes
+      max: 100, // limit each IP to 100 requests per windowMs
+      message: "Too many requests from this IP, please try again later",
+    });
+  }
+};
 
 // API Documentation with Swagger UI
 app.use(
@@ -94,26 +96,32 @@ app.use(
   })
 );
 
-// Routes
-app.use("/api/auth", authRoutes);
-app.use("/api/code", codeRunnerRoutes);
-app.use("/api/languages", languageRoutes);
-app.use("/api/health", healthRoutes);
+// Create API router
+const apiRouter = express.Router();
 
-// Root endpoint
-app.get("/", (req, res) => {
-  res.json({
-    message: "Welcome to the Code Runner API",
-    docs: `${req.protocol}://${req.get("host")}/api-docs`,
+// Routes
+apiRouter.use("/auth", authRoutes);
+apiRouter.use("/code", codeRunnerRoutes);
+apiRouter.use("/languages", languageRoutes);
+apiRouter.use("/health", healthRoutes);
+apiRouter.use("/settings", settingsRoutes);
+
+// Apply API routes with prefix
+app.use("/api", apiRouter);
+
+// 404 Handler
+app.use((req, res) => {
+  res.status(404).json({
+    message: "Not Found - The requested resource does not exist",
   });
 });
 
-// Error handling middleware
+// Error handler
 app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({
-    error: "Something went wrong",
-    message: process.env.NODE_ENV === "development" ? err.message : undefined,
+  console.error(`[${req.id}] Error:`, err);
+  res.status(err.status || 500).json({
+    message: "Server error occurred",
+    error: process.env.NODE_ENV === "development" ? err.message : undefined,
   });
 });
 
@@ -126,15 +134,27 @@ async function startServer() {
 
     // Initialize database with default data
     await initLanguages();
+    
+    // Initialize settings
+    await initSettings();
 
-    // Initialize automatic cleanup if enabled
-    if (process.env.ENABLE_AUTO_CLEANUP !== 'false') {
-      const cronSchedule = process.env.CLEANUP_CRON_SCHEDULE || '0 0 * * *'; // Default: daily at midnight
-      scheduleCleanup(cronSchedule);
-      console.log(`Automated execution cleanup scheduled with cron: ${cronSchedule}`);
-    } else {
-      console.log('Automated execution cleanup is disabled');
-    }
+    // Configure rate limiter using settings
+    const limiter = await configureLimiter();
+    app.use(limiter);
+    
+    // Periodically refresh rate limiter settings
+    setInterval(async () => {
+      const newLimiter = await configureLimiter();
+      app._router.stack.forEach((layer, index) => {
+        if (layer.name === 'rateLimit') {
+          app._router.stack[index] = newLimiter;
+        }
+      });
+      console.log('Rate limiter settings refreshed');
+    }, 10 * 60 * 1000); // Refresh every 10 minutes
+
+    // Initialize automatic cleanup using settings
+    scheduleCleanup();
 
     app.listen(PORT, () => {
       console.log(`Server is running on port ${PORT}`);

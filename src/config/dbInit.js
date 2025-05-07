@@ -9,7 +9,6 @@ const initLanguages = async () => {
     // Check if languages already exist
     const count = await Language.count();
     if (count > 0) {
-      console.log("Languages already initialized");
       return;
     }
 
@@ -72,7 +71,7 @@ const initLanguages = async () => {
 
     // Insert languages
     await Language.bulkCreate(languages);
-    console.log("Languages initialized successfully");
+    console.log("Default languages initialized successfully");
   } catch (error) {
     console.error("Error initializing languages:", error);
   }

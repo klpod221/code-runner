@@ -6,21 +6,6 @@ services:
     container_name: code_runner_api
     ports:
       - "3000:3000"
-    environment:
-      - NODE_ENV=${NODE_ENV:-development}
-      - DB_HOST=${DB_HOST:-db}
-      - DB_PORT=${DB_PORT:-5432}
-      - DB_USER=${DB_USER:-postgres}
-      - DB_PASSWORD=${DB_PASSWORD:-postgres}
-      - DB_NAME=${DB_NAME:-code_runner}
-      - JWT_SECRET=${JWT_SECRET:-your_jwt_secret_key_change_in_production}
-      - JWT_EXPIRATION=${JWT_EXPIRATION}
-      - RATE_LIMIT_WINDOW=${RATE_LIMIT_WINDOW:-15}
-      - RATE_LIMIT_MAX=${RATE_LIMIT_MAX:-100}
-      - LOG_LEVEL=${LOG_LEVEL:-debug}
-      - MAX_EXECUTION_TIME=10000
-      - MAX_MEMORY=512
-      - CODE_EXECUTION_TEMP_DIR=/tmp/code-execution
     volumes:
       - ./:/app
       - /app/node_modules
@@ -36,9 +21,9 @@ services:
     image: postgres:14
     container_name: code_runner_db
     environment:
-      - POSTGRES_USER=${DB_USER:-postgres}
-      - POSTGRES_PASSWORD=${DB_PASSWORD:-postgres}
-      - POSTGRES_DB=${DB_NAME:-code_runner}
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_NAME}
     volumes:
       - ./docker/postgres_data:/var/lib/postgresql/data
     ports:

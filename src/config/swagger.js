@@ -24,6 +24,10 @@ const options = {
     ],
     tags: [
       {
+        name: "Health",
+        description: "System health and status endpoints",
+      },
+      {
         name: "Authentication",
         description: "User authentication endpoints",
       },
@@ -36,8 +40,8 @@ const options = {
         description: "Endpoints for running code and viewing execution history",
       },
       {
-        name: "Health",
-        description: "System health and status endpoints",
+        name: "Settings",
+        description: "Application settings operations (admin only)",
       },
     ],
     components: {
@@ -49,7 +53,7 @@ const options = {
         },
       },
       schemas: {
-        // User schema
+        // Authentication related schemas
         User: {
           type: "object",
           required: ["username", "email", "password"],
@@ -104,7 +108,51 @@ const options = {
             updatedAt: "2023-01-01T12:00:00Z",
           },
         },
-        // Language schema
+        AuthResponse: {
+          type: "object",
+          properties: {
+            message: {
+              type: "string"
+            },
+            token: {
+              type: "string",
+              description: "JWT token for authenticating requests"
+            },
+            user: {
+              type: "object",
+              properties: {
+                id: {
+                  type: "string",
+                  format: "uuid"
+                },
+                username: {
+                  type: "string"
+                },
+                email: {
+                  type: "string",
+                  format: "email"
+                },
+                role: {
+                  type: "string",
+                  enum: ["user", "admin"]
+                }
+              }
+            }
+          }
+        },
+        ProfileResponse: {
+          type: "object",
+          properties: {
+            message: {
+              type: "string"
+            },
+            user: {
+              $ref: '#/components/schemas/User'
+            }
+          }
+        },
+
+        // Language related schemas
         Language: {
           type: "object",
           required: [
@@ -177,7 +225,35 @@ const options = {
             updatedAt: "2023-01-01T12:00:00Z",
           },
         },
-        // CodeExecution schema
+        LanguageListResponse: {
+          type: "object",
+          properties: {
+            message: {
+              type: "string",
+              example: "Languages retrieved successfully"
+            },
+            languages: {
+              type: "array",
+              items: {
+                $ref: '#/components/schemas/Language'
+              }
+            }
+          }
+        },
+        LanguageDetailResponse: {
+          type: "object",
+          properties: {
+            message: {
+              type: "string",
+              example: "Language retrieved successfully"
+            },
+            language: {
+              $ref: '#/components/schemas/Language'
+            }
+          }
+        },
+
+        // Code Execution related schemas
         CodeExecution: {
           type: "object",
           properties: {
@@ -287,7 +363,6 @@ const options = {
             updatedAt: "2023-01-01T12:00:00Z",
           },
         },
-        // TestCase schema
         TestCase: {
           type: "object",
           properties: {
@@ -349,156 +424,6 @@ const options = {
             updatedAt: "2023-01-01T12:00:00Z",
           },
         },
-        // Health schemas
-        HealthResponse: {
-          type: "object",
-          properties: {
-            status: {
-              type: "string",
-              example: "healthy"
-            },
-            timestamp: {
-              type: "string",
-              example: "2023-05-15T14:30:25.000Z"
-            },
-            uptime: {
-              type: "string",
-              example: "1234.56 seconds"
-            },
-            serverInfo: {
-              type: "object"
-            },
-            env: {
-              type: "string",
-              example: "development"
-            }
-          }
-        },
-        DatabaseHealthResponse: {
-          type: "object",
-          properties: {
-            status: {
-              type: "string",
-              example: "healthy"
-            },
-            message: {
-              type: "string",
-              example: "Database connection is working"
-            },
-            timestamp: {
-              type: "string",
-              example: "2023-05-15T14:30:25.000Z"
-            },
-            dbInfo: {
-              type: "object",
-              properties: {
-                name: {
-                  type: "string"
-                },
-                host: {
-                  type: "string"
-                },
-                port: {
-                  type: "number"
-                },
-                dialect: {
-                  type: "string"
-                }
-              }
-            }
-          }
-        },
-        FullHealthResponse: {
-          type: "object",
-          properties: {
-            status: {
-              type: "string",
-              example: "healthy"
-            },
-            api: {
-              $ref: '#/components/schemas/HealthResponse'
-            },
-            database: {
-              $ref: '#/components/schemas/DatabaseHealthResponse'
-            },
-            components: {
-              type: "object"
-            }
-          }
-        },
-        // Language response schemas
-        LanguageListResponse: {
-          type: "object",
-          properties: {
-            message: {
-              type: "string",
-              example: "Languages retrieved successfully"
-            },
-            languages: {
-              type: "array",
-              items: {
-                $ref: '#/components/schemas/Language'
-              }
-            }
-          }
-        },
-        LanguageDetailResponse: {
-          type: "object",
-          properties: {
-            message: {
-              type: "string",
-              example: "Language retrieved successfully"
-            },
-            language: {
-              $ref: '#/components/schemas/Language'
-            }
-          }
-        },
-        // Auth response schemas
-        AuthResponse: {
-          type: "object",
-          properties: {
-            message: {
-              type: "string"
-            },
-            token: {
-              type: "string",
-              description: "JWT token for authenticating requests"
-            },
-            user: {
-              type: "object",
-              properties: {
-                id: {
-                  type: "string",
-                  format: "uuid"
-                },
-                username: {
-                  type: "string"
-                },
-                email: {
-                  type: "string",
-                  format: "email"
-                },
-                role: {
-                  type: "string",
-                  enum: ["user", "admin"]
-                }
-              }
-            }
-          }
-        },
-        ProfileResponse: {
-          type: "object",
-          properties: {
-            message: {
-              type: "string"
-            },
-            user: {
-              $ref: '#/components/schemas/User'
-            }
-          }
-        },
-        // Code execution response schemas
         CodeExecutionResponse: {
           type: "object",
           properties: {
@@ -651,9 +576,182 @@ const options = {
               }
             }
           }
-        }
+        },
+
+        // Health related schemas
+        HealthResponse: {
+          type: "object",
+          properties: {
+            status: {
+              type: "string",
+              example: "healthy"
+            },
+            timestamp: {
+              type: "string",
+              example: "2023-05-15T14:30:25.000Z"
+            },
+            uptime: {
+              type: "string",
+              example: "1234.56 seconds"
+            },
+            serverInfo: {
+              type: "object"
+            },
+            env: {
+              type: "string",
+              example: "development"
+            }
+          }
+        },
+        DatabaseHealthResponse: {
+          type: "object",
+          properties: {
+            status: {
+              type: "string",
+              example: "healthy"
+            },
+            message: {
+              type: "string",
+              example: "Database connection is working"
+            },
+            timestamp: {
+              type: "string",
+              example: "2023-05-15T14:30:25.000Z"
+            },
+            dbInfo: {
+              type: "object",
+              properties: {
+                name: {
+                  type: "string"
+                },
+                host: {
+                  type: "string"
+                },
+                port: {
+                  type: "number"
+                },
+                dialect: {
+                  type: "string"
+                }
+              }
+            }
+          }
+        },
+        FullHealthResponse: {
+          type: "object",
+          properties: {
+            status: {
+              type: "string",
+              example: "healthy"
+            },
+            api: {
+              $ref: '#/components/schemas/HealthResponse'
+            },
+            database: {
+              $ref: '#/components/schemas/DatabaseHealthResponse'
+            },
+            components: {
+              type: "object"
+            }
+          }
+        },
+
+        // Settings related schemas
+        Setting: {
+          type: "object",
+          properties: {
+            key: {
+              type: "string",
+              description: "Setting identifier key"
+            },
+            value: {
+              type: "string",
+              description: "Setting value"
+            },
+            description: {
+              type: "string",
+              description: "Description of what this setting controls"
+            },
+            updatedAt: {
+              type: "string",
+              format: "date-time",
+              description: "When the setting was last updated"
+            },
+            updatedBy: {
+              type: "string",
+              format: "uuid",
+              description: "ID of user who last updated the setting"
+            }
+          }
+        },
+        SettingsResponse: {
+          type: "object",
+          properties: {
+            message: {
+              type: "string",
+              example: "Settings retrieved successfully"
+            },
+            settings: {
+              type: "array",
+              items: {
+                $ref: '#/components/schemas/Setting'
+              }
+            }
+          }
+        },
+        SettingsCategoriesResponse: {
+          type: "object",
+          properties: {
+            message: {
+              type: "string",
+              example: "Settings retrieved successfully"
+            },
+            settings: {
+              type: "object",
+              properties: {
+                registration: {
+                  type: "object",
+                  additionalProperties: {
+                    $ref: '#/components/schemas/Setting'
+                  }
+                },
+                rateLimit: {
+                  type: "object",
+                  additionalProperties: {
+                    $ref: '#/components/schemas/Setting'
+                  }
+                },
+                cleanup: {
+                  type: "object",
+                  additionalProperties: {
+                    $ref: '#/components/schemas/Setting'
+                  }
+                },
+                other: {
+                  type: "object",
+                  additionalProperties: {
+                    $ref: '#/components/schemas/Setting'
+                  }
+                }
+              }
+            }
+          }
+        },
+        SettingUpdateResponse: {
+          type: "object",
+          properties: {
+            message: {
+              type: "string",
+              example: "Setting updated successfully"
+            },
+            setting: {
+              $ref: '#/components/schemas/Setting'
+            }
+          }
+        },
       },
       requestBodies: {
+        // Authentication related request bodies
         UserRegister: {
           description: "User registration information",
           required: true,
@@ -687,6 +785,8 @@ const options = {
             },
           },
         },
+        
+        // Code Execution related request bodies
         SingleFileCodeExecution: {
           description: "Code execution with a single file",
           required: true,
@@ -854,7 +954,31 @@ const options = {
               }
             }
           }
-        }
+        },
+        
+        // Settings related request bodies
+        SettingUpdate: {
+          description: "Update an application setting",
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                required: ["key", "value"],
+                properties: {
+                  key: {
+                    type: "string",
+                    description: "The setting key to update"
+                  },
+                  value: {
+                    type: "string",
+                    description: "The new setting value"
+                  }
+                }
+              }
+            }
+          }
+        },
       },
       responses: {
         UnauthorizedError: {

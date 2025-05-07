@@ -20,14 +20,16 @@ services:
       - LOG_LEVEL=${LOG_LEVEL:-debug}
       - MAX_EXECUTION_TIME=10000
       - MAX_MEMORY=512
+      - CODE_EXECUTION_TEMP_DIR=/tmp/code-execution
     volumes:
       - ./:/app
       - /app/node_modules
-      - ./docker/code_execution:/tmp/code-execution
+      - code_execution_tmp:/tmp/code-execution
     depends_on:
       db:
         condition: service_healthy
-    command: npm run dev
+    command: >
+      bash -c "mkdir -p /tmp/code-execution && chmod 755 /tmp/code-execution && npm run dev"
     restart: always
 
   db:
@@ -47,3 +49,7 @@ services:
       timeout: 5s
       retries: 5
     restart: always
+
+volumes:
+  code_execution_tmp:
+    driver: local

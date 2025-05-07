@@ -6,16 +6,21 @@ const morgan = require("morgan");
 const rateLimit = require("express-rate-limit");
 const swaggerUi = require("swagger-ui-express");
 const swaggerSpecs = require("./config/swagger");
+const requestIdMiddleware = require("./middleware/requestId.middleware");
 
 const authRoutes = require("./routes/auth.routes");
 const codeRunnerRoutes = require("./routes/codeRunner.routes");
 const languageRoutes = require("./routes/language.routes");
+const healthRoutes = require("./routes/health.routes");
 const { sequelize } = require("./models");
 const { initLanguages } = require("./config/dbInit");
 
 // Initialize express app
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Add request ID middleware early in the chain
+app.use(requestIdMiddleware);
 
 // Security middlewares
 app.use(
@@ -24,8 +29,48 @@ app.use(
       process.env.NODE_ENV === "production" ? undefined : false,
   })
 );
-app.use(cors());
-app.use(morgan(process.env.NODE_ENV === "development" ? "dev" : "combined"));
+
+// Configure CORS properly
+const corsOptions = {
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps, curl requests)
+    if (!origin) return callback(null, true);
+    
+    const allowedOrigins = [
+      'http://localhost:3000',
+      'http://localhost:8080',
+      'http://127.0.0.1:3000',
+      'http://127.0.0.1:8080'
+    ];
+    
+    if (allowedOrigins.indexOf(origin) !== -1 || !origin) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization']
+};
+
+app.use(cors(corsOptions));
+
+// Custom logging format that includes the request ID
+morgan.token('requestId', function (req) {
+  return req.id;
+});
+
+app.use(morgan(function (tokens, req, res) {
+  return [
+    `[${tokens.requestId(req, res)}]`,
+    tokens.method(req, res),
+    tokens.url(req, res),
+    tokens.status(req, res),
+    tokens['response-time'](req, res), 'ms'
+  ].join(' ');
+}));
+
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
@@ -52,6 +97,7 @@ app.use(
 app.use("/api/auth", authRoutes);
 app.use("/api/code", codeRunnerRoutes);
 app.use("/api/languages", languageRoutes);
+app.use("/api/health", healthRoutes);
 
 // Root endpoint
 app.get("/", (req, res) => {

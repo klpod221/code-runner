@@ -3,8 +3,23 @@ const fs = require("fs-extra");
 const { exec } = require("child_process");
 const { v4: uuidv4 } = require("uuid");
 const util = require("util");
+const os = require("os");
 
 const execPromise = util.promisify(exec);
+
+// Get base directory for code execution temp files
+const BASE_TEMP_DIR = process.env.CODE_EXECUTION_TEMP_DIR || path.join(os.tmpdir(), "code-execution");
+
+// Ensure base temp directory exists on startup
+(async () => {
+  try {
+    await fs.ensureDir(BASE_TEMP_DIR, { mode: 0o755 });
+    console.log(`Base temp directory ensured at: ${BASE_TEMP_DIR}`);
+  } catch (err) {
+    console.error(`Failed to create base temp directory: ${err.message}`);
+    console.error('This may cause code execution to fail. Check directory permissions.');
+  }
+})();
 
 // Supported languages configuration
 const languageConfigs = {
@@ -47,9 +62,10 @@ const languageConfigs = {
  * @param {string} options.language - Programming language name (nodejs, python, java, etc.)
  * @param {Array<Object>} options.files - Array of file objects { name, content, isMain }
  * @param {string} options.stdin - Standard input (optional)
+ * @param {string} options.requestId - Request ID for logging (optional)
  * @returns {Promise<Object>} Execution result
  */
-async function executeCode({ language, files, stdin = "" }) {
+async function executeCode({ language, files, stdin = "", requestId = "unknown" }) {
   // Validate language support
   if (!languageConfigs[language]) {
     throw new Error(`Unsupported language: ${language}`);
@@ -57,26 +73,53 @@ async function executeCode({ language, files, stdin = "" }) {
 
   // Create a unique execution ID and temp directory
   const executionId = uuidv4();
-  const tempDir = path.join("/tmp/code-execution", executionId);
+  const tempDir = path.join(BASE_TEMP_DIR, executionId);
 
   try {
-    // Create temp directory
-    await fs.mkdirp(tempDir);
+    console.log(`[${requestId}] Creating execution directory: ${tempDir}`);
+    
+    // Ensure base directory exists first with proper permissions
+    await fs.ensureDir(BASE_TEMP_DIR, { mode: 0o755 });
+    
+    // Create temp directory with explicit permissions
+    await fs.ensureDir(tempDir, { mode: 0o755 });
+    
+    // Verify directory was created successfully
+    const dirExists = await fs.pathExists(tempDir);
+    if (!dirExists) {
+      throw new Error(`Failed to create temporary directory: ${tempDir}`);
+    }
 
-    // Find the main file
+    console.log(`[${requestId}] Created execution directory successfully`);
+
+    // Find the main file or use the first file
     const mainFile = files.find((file) => file.isMain) || files[0];
     if (!mainFile) {
       throw new Error("No files provided");
     }
 
-    // Write all files to the temp directory
+    // Write all files to the temp directory with proper error handling
     for (const file of files) {
-      await fs.writeFile(path.join(tempDir, file.name), file.content);
+      try {
+        const filePath = path.join(tempDir, file.name);
+        await fs.writeFile(filePath, file.content);
+        
+        // Make files executable for compiled languages
+        if (languageConfigs[language].compile) {
+          await fs.chmod(filePath, 0o755);
+        }
+      } catch (fileError) {
+        throw new Error(`Failed to write file "${file.name}": ${fileError.message}`);
+      }
     }
 
     // Write stdin to file if provided
     if (stdin) {
-      await fs.writeFile(path.join(tempDir, "input.txt"), stdin);
+      try {
+        await fs.writeFile(path.join(tempDir, "input.txt"), stdin);
+      } catch (stdinError) {
+        throw new Error(`Failed to write stdin file: ${stdinError.message}`);
+      }
     }
 
     // Get language configuration

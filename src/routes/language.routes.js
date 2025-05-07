@@ -1,7 +1,6 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const languageController = require('../controllers/language.controller');
-const { verifyToken } = require('../middleware/auth.middleware');
+const languageController = require("../controllers/language.controller");
 
 /**
  * @swagger
@@ -27,7 +26,7 @@ const { verifyToken } = require('../middleware/auth.middleware');
  *       500:
  *         $ref: '#/components/responses/ServerError'
  */
-router.get('/', languageController.getAllLanguages);
+router.get("/", languageController.getAllLanguages);
 
 /**
  * @swagger
@@ -61,6 +60,6 @@ router.get('/', languageController.getAllLanguages);
  *       500:
  *         $ref: '#/components/responses/ServerError'
  */
-router.get('/:id', languageController.getLanguageById);
+router.get("/:id", languageController.getLanguageById);
 
 module.exports = router;

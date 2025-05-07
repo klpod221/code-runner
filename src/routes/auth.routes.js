@@ -1,7 +1,7 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const authController = require('../controllers/auth.controller');
-const { verifyToken } = require('../middleware/auth.middleware');
+const authController = require("../controllers/auth.controller");
+const { verifyToken } = require("../middleware/auth.middleware");
 
 /**
  * @swagger
@@ -37,10 +37,12 @@ const { verifyToken } = require('../middleware/auth.middleware');
  *                       type: string
  *       400:
  *         description: Bad request, username or email already in use
+ *       403:
+ *         description: Registration is disabled
  *       500:
  *         $ref: '#/components/responses/ServerError'
  */
-router.post('/register', authController.register);
+router.post("/register", authController.register);
 
 /**
  * @swagger
@@ -82,7 +84,7 @@ router.post('/register', authController.register);
  *       500:
  *         $ref: '#/components/responses/ServerError'
  */
-router.post('/login', authController.login);
+router.post("/login", authController.login);
 
 /**
  * @swagger
@@ -109,6 +111,6 @@ router.post('/login', authController.login);
  *       500:
  *         $ref: '#/components/responses/ServerError'
  */
-router.get('/profile', verifyToken, authController.getProfile);
+router.get("/profile", verifyToken, authController.getProfile);
 
 module.exports = router;

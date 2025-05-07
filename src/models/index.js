@@ -1,5 +1,5 @@
-const { Sequelize } = require('sequelize');
-const dbConfig = require('../config/db.config');
+const { Sequelize } = require("sequelize");
+const dbConfig = require("../config/db.config");
 
 // Create Sequelize instance
 const sequelize = new Sequelize(
@@ -25,13 +25,16 @@ db.Sequelize = Sequelize;
 db.sequelize = sequelize;
 
 // Import models
-db.User = require('./user.model')(sequelize, Sequelize);
-db.CodeExecution = require('./codeExecution.model')(sequelize, Sequelize);
-db.Language = require('./language.model')(sequelize, Sequelize);
+db.User = require("./user.model")(sequelize, Sequelize);
+db.CodeExecution = require("./codeExecution.model")(sequelize, Sequelize);
+db.Language = require("./language.model")(sequelize, Sequelize);
 
 // Define associations
-db.User.hasMany(db.CodeExecution, { as: 'executions' });
-db.CodeExecution.belongsTo(db.User, { foreignKey: 'userId', as: 'user' });
-db.CodeExecution.belongsTo(db.Language, { foreignKey: 'languageId', as: 'language' });
+db.User.hasMany(db.CodeExecution, { as: "executions" });
+db.CodeExecution.belongsTo(db.User, { foreignKey: "userId", as: "user" });
+db.CodeExecution.belongsTo(db.Language, {
+  foreignKey: "languageId",
+  as: "language",
+});
 
 module.exports = db;

@@ -1,55 +1,55 @@
-const path = require('path');
-const fs = require('fs-extra');
-const { exec } = require('child_process');
-const { v4: uuidv4 } = require('uuid');
-const util = require('util');
+const path = require("path");
+const fs = require("fs-extra");
+const { exec } = require("child_process");
+const { v4: uuidv4 } = require("uuid");
+const util = require("util");
 
 const execPromise = util.promisify(exec);
 
 // Supported languages configuration
 const languageConfigs = {
   nodejs: {
-    extension: '.js',
+    extension: ".js",
     compile: null,
-    run: 'node',
-    timeout: parseInt(process.env.MAX_EXECUTION_TIME) || 10000
+    run: "node",
+    timeout: parseInt(process.env.MAX_EXECUTION_TIME) || 10000,
   },
   python: {
-    extension: '.py',
+    extension: ".py",
     compile: null,
-    run: 'python3',
-    timeout: parseInt(process.env.MAX_EXECUTION_TIME) || 10000
+    run: "python3",
+    timeout: parseInt(process.env.MAX_EXECUTION_TIME) || 10000,
   },
   java: {
-    extension: '.java',
+    extension: ".java",
     compile: (file) => `javac ${file}`,
     run: (className) => `java ${className}`,
-    timeout: parseInt(process.env.MAX_EXECUTION_TIME) || 15000
+    timeout: parseInt(process.env.MAX_EXECUTION_TIME) || 15000,
   },
   cpp: {
-    extension: '.cpp',
-    compile: (file) => `g++ -o ${file.replace('.cpp', '')} ${file}`,
-    run: (file) => `./${file.replace('.cpp', '')}`,
-    timeout: parseInt(process.env.MAX_EXECUTION_TIME) || 10000
+    extension: ".cpp",
+    compile: (file) => `g++ -o ${file.replace(".cpp", "")} ${file}`,
+    run: (file) => `./${file.replace(".cpp", "")}`,
+    timeout: parseInt(process.env.MAX_EXECUTION_TIME) || 10000,
   },
   c: {
-    extension: '.c',
-    compile: (file) => `gcc -o ${file.replace('.c', '')} ${file}`,
-    run: (file) => `./${file.replace('.c', '')}`,
-    timeout: parseInt(process.env.MAX_EXECUTION_TIME) || 10000
-  }
+    extension: ".c",
+    compile: (file) => `gcc -o ${file.replace(".c", "")} ${file}`,
+    run: (file) => `./${file.replace(".c", "")}`,
+    timeout: parseInt(process.env.MAX_EXECUTION_TIME) || 10000,
+  },
 };
 
 /**
  * Execute code in the specified language
- * 
+ *
  * @param {Object} options - Options for code execution
  * @param {string} options.language - Programming language name (nodejs, python, java, etc.)
  * @param {Array<Object>} options.files - Array of file objects { name, content, isMain }
  * @param {string} options.stdin - Standard input (optional)
  * @returns {Promise<Object>} Execution result
  */
-async function executeCode({ language, files, stdin = '' }) {
+async function executeCode({ language, files, stdin = "" }) {
   // Validate language support
   if (!languageConfigs[language]) {
     throw new Error(`Unsupported language: ${language}`);
@@ -57,16 +57,16 @@ async function executeCode({ language, files, stdin = '' }) {
 
   // Create a unique execution ID and temp directory
   const executionId = uuidv4();
-  const tempDir = path.join('/tmp/code-execution', executionId);
+  const tempDir = path.join("/tmp/code-execution", executionId);
 
   try {
     // Create temp directory
     await fs.mkdirp(tempDir);
-    
+
     // Find the main file
-    const mainFile = files.find(file => file.isMain) || files[0];
+    const mainFile = files.find((file) => file.isMain) || files[0];
     if (!mainFile) {
-      throw new Error('No files provided');
+      throw new Error("No files provided");
     }
 
     // Write all files to the temp directory
@@ -76,39 +76,39 @@ async function executeCode({ language, files, stdin = '' }) {
 
     // Write stdin to file if provided
     if (stdin) {
-      await fs.writeFile(path.join(tempDir, 'input.txt'), stdin);
+      await fs.writeFile(path.join(tempDir, "input.txt"), stdin);
     }
 
     // Get language configuration
     const config = languageConfigs[language];
-    
+
     // Initialize result structure
     let result = {
-      stdout: '',
-      stderr: '',
+      stdout: "",
+      stderr: "",
       exitCode: 0,
-      compilationOutput: '',
+      compilationOutput: "",
       executionTime: 0,
       memoryUsage: 0,
-      success: false
+      success: false,
     };
 
     // Start time measurement
     const startTime = process.hrtime();
-    
+
     // For compiled languages, compile the code first
     if (config.compile) {
       try {
         const compileCmd = config.compile(mainFile.name);
         console.log(`[${executionId}] Compiling: ${compileCmd}`);
-        
-        const { stdout, stderr } = await execPromise(compileCmd, { 
-          cwd: tempDir, 
-          timeout: config.timeout 
+
+        const { stdout, stderr } = await execPromise(compileCmd, {
+          cwd: tempDir,
+          timeout: config.timeout,
         });
-        
-        result.compilationOutput = stdout || '';
-        
+
+        result.compilationOutput = stdout || "";
+
         // If stderr is not empty, there was a compilation error
         if (stderr) {
           result.stderr = stderr;
@@ -123,14 +123,14 @@ async function executeCode({ language, files, stdin = '' }) {
         return result;
       }
     }
-    
+
     // Execute the code
     try {
       let runCmd;
-      
-      if (language === 'java') {
+
+      if (language === "java") {
         // For Java, extract class name from file name
-        const className = path.basename(mainFile.name, '.java');
+        const className = path.basename(mainFile.name, ".java");
         runCmd = config.run(className);
       } else if (config.compile) {
         // For other compiled languages
@@ -139,48 +139,52 @@ async function executeCode({ language, files, stdin = '' }) {
         // For interpreted languages
         runCmd = `${config.run} ${mainFile.name}`;
       }
-      
+
       // Add stdin redirection if provided
       if (stdin) {
         runCmd += ` < input.txt`;
       }
-      
+
       console.log(`[${executionId}] Executing: ${runCmd}`);
-      
-      const { stdout, stderr } = await execPromise(runCmd, { 
-        cwd: tempDir, 
-        timeout: config.timeout 
+
+      const { stdout, stderr } = await execPromise(runCmd, {
+        cwd: tempDir,
+        timeout: config.timeout,
       });
-      
+
       // Calculate execution time
       const endTime = process.hrtime(startTime);
-      const executionTimeMs = Math.round((endTime[0] * 1000) + (endTime[1] / 1000000));
-      
-      result.stdout = stdout || '';
-      result.stderr = stderr || '';
+      const executionTimeMs = Math.round(
+        endTime[0] * 1000 + endTime[1] / 1000000
+      );
+
+      result.stdout = stdout || "";
+      result.stderr = stderr || "";
       result.executionTime = executionTimeMs;
       result.exitCode = 0;
       result.success = true;
-      
+
       // Memory usage calculation is not precise in this approach
       // A more accurate approach would be to use resource monitoring
       result.memoryUsage = 0;
     } catch (error) {
       // Calculate execution time even if there was an error
       const endTime = process.hrtime(startTime);
-      const executionTimeMs = Math.round((endTime[0] * 1000) + (endTime[1] / 1000000));
-      
-      result.stdout = error.stdout || '';
+      const executionTimeMs = Math.round(
+        endTime[0] * 1000 + endTime[1] / 1000000
+      );
+
+      result.stdout = error.stdout || "";
       result.stderr = error.stderr || error.message;
       result.executionTime = executionTimeMs;
       result.exitCode = error.code || 1;
       result.success = false;
-      
-      if (error.signal === 'SIGTERM' || error.killed) {
-        result.stderr += '\nExecution timed out';
+
+      if (error.signal === "SIGTERM" || error.killed) {
+        result.stderr += "\nExecution timed out";
       }
     }
-    
+
     return result;
   } catch (error) {
     throw error;
@@ -194,7 +198,7 @@ async function executeCode({ language, files, stdin = '' }) {
   }
 }
 
-module.exports = { 
+module.exports = {
   executeCode,
-  supportedLanguages: Object.keys(languageConfigs)
+  supportedLanguages: Object.keys(languageConfigs),
 };

@@ -41,6 +41,8 @@ temp/
 
 # Docker
 .docker-data/
+# Docker volume folder
+docker/
 
 # Test coverage
 coverage/

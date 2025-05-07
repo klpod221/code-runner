@@ -168,7 +168,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"languageId\": \"language_id_here\",\n    \"code\": \"console.log('Hello, World!');\",\n    \"stdin\": \"\"\n}",
+							"raw": "{\n    \"languageId\": \"550e8400-e29b-41d4-a716-446655440000\",\n    \"code\": \"console.log('Hello, World!');\",\n    \"stdin\": \"\",\n    \"isBase64Encoded\": false\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -185,12 +185,13 @@
 								"code",
 								"run"
 							]
-						}
+						},
+						"description": "Execute a single file of code in the specified language"
 					},
 					"response": []
 				},
 				{
-					"name": "Run Multi-File Code",
+					"name": "Run Multi-File Code (Node.js)",
 					"request": {
 						"method": "POST",
 						"header": [
@@ -202,7 +203,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"languageId\": \"language_id_here\",\n    \"files\": [\n        {\n            \"name\": \"main.js\",\n            \"content\": \"const helper = require('./helper'); console.log(helper.getMessage());\",\n            \"isMain\": true\n        },\n        {\n            \"name\": \"helper.js\",\n            \"content\": \"exports.getMessage = () => 'Hello, World!';\"\n        }\n    ],\n    \"stdin\": \"\"\n}",
+							"raw": "{\n    \"languageId\": \"550e8400-e29b-41d4-a716-446655440000\",\n    \"files\": [\n        {\n            \"name\": \"main.js\",\n            \"content\": \"const utils = require('./utils.js');\\nconst calculator = require('./calculator.js');\\n\\nconsole.log(utils.formatNumber(calculator.add(5, 10)));\",\n            \"isMain\": true\n        },\n        {\n            \"name\": \"utils.js\",\n            \"content\": \"module.exports = {\\n  formatNumber: (num) => `Result: ${num}`\\n};\",\n            \"isMain\": false\n        },\n        {\n            \"name\": \"calculator.js\",\n            \"content\": \"module.exports = {\\n  add: (a, b) => a + b,\\n  subtract: (a, b) => a - b\\n};\",\n            \"isMain\": false\n        }\n    ],\n    \"stdin\": \"\",\n    \"isBase64Encoded\": false\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -219,7 +220,78 @@
 								"code",
 								"run"
 							]
-						}
+						},
+						"description": "Execute multi-file Node.js code"
+					},
+					"response": []
+				},
+				{
+					"name": "Run Multi-File Code (Java)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"languageId\": \"4fa69a1a-5b1f-4e1d-a3ba-a8afec213a0b\",\n    \"files\": [\n        {\n            \"name\": \"Main.java\",\n            \"content\": \"public class Main {\\n  public static void main(String[] args) {\\n    Calculator calc = new Calculator();\\n    Formatter fmt = new Formatter();\\n    System.out.println(fmt.format(calc.add(15, 27)));\\n  }\\n}\",\n            \"isMain\": true\n        },\n        {\n            \"name\": \"Calculator.java\",\n            \"content\": \"public class Calculator {\\n  public int add(int a, int b) {\\n    return a + b;\\n  }\\n  \\n  public int subtract(int a, int b) {\\n    return a - b;\\n  }\\n}\",\n            \"isMain\": false\n        },\n        {\n            \"name\": \"Formatter.java\",\n            \"content\": \"public class Formatter {\\n  public String format(int value) {\\n    return \\\"Result: \\\" + value;\\n  }\\n}\",\n            \"isMain\": false\n        }\n    ],\n    \"stdin\": \"\",\n    \"isBase64Encoded\": false\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/code/run",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"code",
+								"run"
+							]
+						},
+						"description": "Execute multi-file Java code"
+					},
+					"response": []
+				},
+				{
+					"name": "Run Code with Base64 Encoding",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"languageId\": \"550e8400-e29b-41d4-a716-446655440000\",\n    \"files\": [\n        {\n            \"name\": \"main.js\",\n            \"content\": \"Y29uc3QgdXRpbHMgPSByZXF1aXJlKCcuL3V0aWxzLmpzJyk7CmNvbnN0IGNhbGN1bGF0b3IgPSByZXF1aXJlKCcuL2NhbGN1bGF0b3IuanMnKTsKCmNvbnNvbGUubG9nKHV0aWxzLmZvcm1hdE51bWJlcihjYWxjdWxhdG9yLmFkZCg1LCAxMCkpKTs=\",\n            \"isMain\": true\n        },\n        {\n            \"name\": \"utils.js\",\n            \"content\": \"bW9kdWxlLmV4cG9ydHMgPSB7CiAgZm9ybWF0TnVtYmVyOiAobnVtKSA9PiBgUmVzdWx0OiAke251bX1gCn07\",\n            \"isMain\": false\n        },\n        {\n            \"name\": \"calculator.js\",\n            \"content\": \"bW9kdWxlLmV4cG9ydHMgPSB7CiAgYWRkOiAoYSwgYikgPT4gYSArIGIsCiAgc3VidHJhY3Q6IChhLCBiKSA9PiBhIC0gYgp9Ow==\",\n            \"isMain\": false\n        }\n    ],\n    \"stdin\": \"\",\n    \"isBase64Encoded\": true\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/code/run",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"code",
+								"run"
+							]
+						},
+						"description": "Execute code with base64 encoded content"
 					},
 					"response": []
 				},
@@ -235,14 +307,14 @@
 							}
 						],
 						"url": {
-							"raw": "{{base_url}}/api/code/history?page=1&limit=10",
+							"raw": "{{base_url}}/api/code/executions?page=1&limit=10",
 							"host": [
 								"{{base_url}}"
 							],
 							"path": [
 								"api",
 								"code",
-								"history"
+								"executions"
 							],
 							"query": [
 								{
@@ -254,7 +326,8 @@
 									"value": "10"
 								}
 							]
-						}
+						},
+						"description": "Get user's code execution history with pagination"
 					},
 					"response": []
 				},
@@ -270,14 +343,14 @@
 							}
 						],
 						"url": {
-							"raw": "{{base_url}}/api/code/execution/:id",
+							"raw": "{{base_url}}/api/code/executions/:id",
 							"host": [
 								"{{base_url}}"
 							],
 							"path": [
 								"api",
 								"code",
-								"execution",
+								"executions",
 								":id"
 							],
 							"variable": [
@@ -286,7 +359,8 @@
 									"value": "execution_id_here"
 								}
 							]
-						}
+						},
+						"description": "Get specific code execution details by ID"
 					},
 					"response": []
 				}

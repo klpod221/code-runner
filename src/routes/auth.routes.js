@@ -18,23 +18,7 @@ const { verifyToken } = require("../middleware/auth.middleware");
  *         content:
  *           application/json:
  *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                 token:
- *                   type: string
- *                 user:
- *                   type: object
- *                   properties:
- *                     id:
- *                       type: string
- *                     username:
- *                       type: string
- *                     email:
- *                       type: string
- *                     role:
- *                       type: string
+ *               $ref: '#/components/schemas/AuthResponse'
  *       400:
  *         description: Bad request, username or email already in use
  *       403:
@@ -59,24 +43,7 @@ router.post("/register", authController.register);
  *         content:
  *           application/json:
  *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                 token:
- *                   type: string
- *                   description: JWT token for authenticating requests
- *                 user:
- *                   type: object
- *                   properties:
- *                     id:
- *                       type: string
- *                     username:
- *                       type: string
- *                     email:
- *                       type: string
- *                     role:
- *                       type: string
+ *               $ref: '#/components/schemas/AuthResponse'
  *       401:
  *         description: Invalid credentials
  *       404:
@@ -100,12 +67,7 @@ router.post("/login", authController.login);
  *         content:
  *           application/json:
  *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                 user:
- *                   $ref: '#/components/schemas/User'
+ *               $ref: '#/components/schemas/ProfileResponse'
  *       401:
  *         $ref: '#/components/responses/UnauthorizedError'
  *       500:

@@ -16,22 +16,7 @@ const healthController = require("../controllers/health.controller");
  *         content:
  *           application/json:
  *             schema:
- *               type: object
- *               properties:
- *                 status:
- *                   type: string
- *                   example: healthy
- *                 timestamp:
- *                   type: string
- *                   example: "2023-05-15T14:30:25.000Z"
- *                 uptime:
- *                   type: string
- *                   example: "1234.56 seconds"
- *                 serverInfo:
- *                   type: object
- *                 env:
- *                   type: string
- *                   example: development
+ *               $ref: '#/components/schemas/HealthResponse'
  */
 router.get("/", healthController.checkHealth);
 
@@ -49,30 +34,22 @@ router.get("/", healthController.checkHealth);
  *         content:
  *           application/json:
  *             schema:
+ *               $ref: '#/components/schemas/DatabaseHealthResponse'
+ *       503:
+ *         description: Database is unhealthy
+ *         content:
+ *           application/json:
+ *             schema:
  *               type: object
  *               properties:
  *                 status:
  *                   type: string
- *                   example: healthy
+ *                   example: unhealthy
  *                 message:
  *                   type: string
- *                   example: "Database connection is working"
- *                 timestamp:
+ *                   example: "Database connection failed"
+ *                 error:
  *                   type: string
- *                   example: "2023-05-15T14:30:25.000Z"
- *                 dbInfo:
- *                   type: object
- *                   properties:
- *                     name:
- *                       type: string
- *                     host:
- *                       type: string
- *                     port:
- *                       type: number
- *                     dialect:
- *                       type: string
- *       503:
- *         description: Database is unhealthy
  */
 router.get("/db", healthController.checkDbHealth);
 
@@ -87,6 +64,10 @@ router.get("/db", healthController.checkDbHealth);
  *     responses:
  *       200:
  *         description: Full health report
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/FullHealthResponse'
  */
 router.get("/full", healthController.checkFullHealth);
 

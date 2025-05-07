@@ -15,14 +15,7 @@ const languageController = require("../controllers/language.controller");
  *         content:
  *           application/json:
  *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                 languages:
- *                   type: array
- *                   items:
- *                     $ref: '#/components/schemas/Language'
+ *               $ref: '#/components/schemas/LanguageListResponse'
  *       500:
  *         $ref: '#/components/responses/ServerError'
  */
@@ -49,12 +42,7 @@ router.get("/", languageController.getAllLanguages);
  *         content:
  *           application/json:
  *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                 language:
- *                   $ref: '#/components/schemas/Language'
+ *               $ref: '#/components/schemas/LanguageDetailResponse'
  *       404:
  *         $ref: '#/components/responses/NotFoundError'
  *       500:

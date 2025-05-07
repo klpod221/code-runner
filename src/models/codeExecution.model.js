@@ -55,6 +55,11 @@ module.exports = (sequelize, Sequelize) => {
         type: Sequelize.TEXT,
         allowNull: true,
       },
+      isPersistent: {
+        type: Sequelize.BOOLEAN,
+        defaultValue: false,
+        comment: "If true, this execution will not be deleted during cleanup"
+      },
     },
     {
       timestamps: true,

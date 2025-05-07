@@ -14,7 +14,6 @@ const BASE_TEMP_DIR = process.env.CODE_EXECUTION_TEMP_DIR || path.join(os.tmpdir
 (async () => {
   try {
     await fs.ensureDir(BASE_TEMP_DIR, { mode: 0o755 });
-    console.log(`Base temp directory ensured at: ${BASE_TEMP_DIR}`);
   } catch (err) {
     console.error(`Failed to create base temp directory: ${err.message}`);
     console.error('This may cause code execution to fail. Check directory permissions.');
@@ -235,8 +234,9 @@ async function executeCode({ language, files, stdin = "", requestId = "unknown" 
     // Clean up the temporary directory
     try {
       await fs.remove(tempDir);
+      console.log(`[${requestId}] Successfully cleaned up temp directory: ${tempDir}`);
     } catch (error) {
-      console.error(`Failed to clean up temp directory: ${error.message}`);
+      console.error(`[${requestId}] Failed to clean up temp directory: ${error.message}`);
     }
   }
 }

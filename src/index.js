@@ -7,6 +7,7 @@ const rateLimit = require("express-rate-limit");
 const swaggerUi = require("swagger-ui-express");
 const swaggerSpecs = require("./config/swagger");
 const requestIdMiddleware = require("./middleware/requestId.middleware");
+const { scheduleCleanup } = require("./services/cleanup.service");
 
 const authRoutes = require("./routes/auth.routes");
 const codeRunnerRoutes = require("./routes/codeRunner.routes");
@@ -125,6 +126,15 @@ async function startServer() {
 
     // Initialize database with default data
     await initLanguages();
+
+    // Initialize automatic cleanup if enabled
+    if (process.env.ENABLE_AUTO_CLEANUP !== 'false') {
+      const cronSchedule = process.env.CLEANUP_CRON_SCHEDULE || '0 0 * * *'; // Default: daily at midnight
+      scheduleCleanup(cronSchedule);
+      console.log(`Automated execution cleanup scheduled with cron: ${cronSchedule}`);
+    } else {
+      console.log('Automated execution cleanup is disabled');
+    }
 
     app.listen(PORT, () => {
       console.log(`Server is running on port ${PORT}`);

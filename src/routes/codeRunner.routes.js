@@ -1,7 +1,8 @@
 const express = require("express");
 const router = express.Router();
 const codeRunnerController = require("../controllers/codeRunner.controller");
-const { verifyToken } = require("../middleware/auth.middleware");
+const cleanupController = require("../controllers/cleanup.controller");
+const { verifyToken, isAdmin } = require("../middleware/auth.middleware");
 
 /**
  * @swagger
@@ -110,30 +111,7 @@ const { verifyToken } = require("../middleware/auth.middleware");
  *         content:
  *           application/json:
  *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                 result:
- *                   type: object
- *                   properties:
- *                     id:
- *                       type: string
- *                       format: uuid
- *                     stdout:
- *                       type: string
- *                     stderr:
- *                       type: string
- *                     compilationOutput:
- *                       type: string
- *                     executionTime:
- *                       type: integer
- *                     memoryUsage:
- *                       type: integer
- *                     exitCode:
- *                       type: integer
- *                     success:
- *                       type: boolean
+ *               $ref: '#/components/schemas/CodeExecutionResponse'
  *             examples:
  *               successResponse:
  *                 value:
@@ -172,30 +150,157 @@ router.post("/run", verifyToken, codeRunnerController.runCode);
 
 /**
  * @swagger
- * /code/executions/{id}:
- *   get:
- *     summary: Get code execution by ID
- *     description: Retrieve details of a specific code execution
+ * /code/run-tests:
+ *   post:
+ *     summary: Execute code against multiple test cases
+ *     description: Run code in a supported language and verify against multiple test cases.
+ *       Each test case defines input and expected output values to check correctness.
  *     tags: [Code Execution]
  *     security:
  *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *           format: uuid
- *         description: ID of the code execution to retrieve
+ *     requestBody:
+ *       $ref: '#/components/requestBodies/TestCaseExecution'
+ *       content:
+ *         application/json:
+ *           examples:
+ *             basicTestCases:
+ *               summary: Test cases for Node.js
+ *               value:
+ *                 languageId: "550e8400-e29b-41d4-a716-446655440000"
+ *                 code: "process.stdin.on('data', (chunk) => {\n  const input = chunk.toString().trim().split(' ');\n  const a = parseInt(input[0]);\n  const b = parseInt(input[1]);\n  console.log(a + b);\n});"
+ *                 testCases:
+ *                   - input: "5 7"
+ *                     expectedOutput: "12"
+ *                     order: 0
+ *                   - input: "10 -5"
+ *                     expectedOutput: "5"
+ *                     order: 1
+ *                   - input: "0 0"
+ *                     expectedOutput: "0"
+ *                     order: 2
+ *                 isBase64Encoded: false
+ *             pythonExample:
+ *               summary: Test cases for Python
+ *               value:
+ *                 languageId: "4b969211-d468-4527-9d70-4a8cb53f13af"
+ *                 code: "a, b = map(int, input().split())\nprint(a + b)"
+ *                 testCases:
+ *                   - input: "5 7"
+ *                     expectedOutput: "12"
+ *                     order: 0
+ *                   - input: "10 -5"
+ *                     expectedOutput: "5"
+ *                     order: 1
+ *                 isBase64Encoded: false
+ *             javaExample:
+ *               summary: Test cases for Java
+ *               value:
+ *                 languageId: "4fa69a1a-5b1f-4e1d-a3ba-a8afec213a0b"
+ *                 code: "import java.util.Scanner;\n\npublic class Main {\n  public static void main(String[] args) {\n    Scanner scanner = new Scanner(System.in);\n    int a = scanner.nextInt();\n    int b = scanner.nextInt();\n    System.out.println(a + b);\n  }\n}"
+ *                 testCases:
+ *                   - input: "5 7"
+ *                     expectedOutput: "12"
+ *                     order: 0
+ *                   - input: "10 -5"
+ *                     expectedOutput: "5"
+ *                     order: 1
+ *                 isBase64Encoded: false
  *     responses:
  *       200:
- *         description: Code execution retrieved successfully
- *       404:
- *         description: Code execution not found
+ *         description: Test case execution completed
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/TestCaseExecutionResponse'
+ *             examples:
+ *               successResponse:
+ *                 value:
+ *                   message: "Test case execution completed"
+ *                   result:
+ *                     id: "90aa32c9-90c5-4ced-968b-5a6f6de8e163"
+ *                     testCases:
+ *                       - input: "5 7"
+ *                         expectedOutput: "12"
+ *                         order: 0
+ *                         actualOutput: "12\n"
+ *                         stderr: ""
+ *                         compilationOutput: ""
+ *                         executionTime: 25
+ *                         exitCode: 0
+ *                         passed: true
+ *                         success: true
+ *                       - input: "10 -5"
+ *                         expectedOutput: "5"
+ *                         order: 1
+ *                         actualOutput: "5\n"
+ *                         stderr: ""
+ *                         compilationOutput: ""
+ *                         executionTime: 24
+ *                         exitCode: 0
+ *                         passed: true
+ *                         success: true
+ *                       - input: "0 0"
+ *                         expectedOutput: "0"
+ *                         order: 2
+ *                         actualOutput: "0\n"
+ *                         stderr: ""
+ *                         compilationOutput: ""
+ *                         executionTime: 27
+ *                         exitCode: 0
+ *                         passed: true
+ *                         success: true
+ *                     summary:
+ *                       totalTests: 3
+ *                       passedTests: 3
+ *                       failedTests: 0
+ *                       successRate: 100
+ *                       totalExecutionTime: 76
+ *                       avgExecutionTime: 25.33
+ *                       allPassed: true
+ *               failedTestsResponse:
+ *                 value:
+ *                   message: "Test case execution completed"
+ *                   result:
+ *                     id: "90aa32c9-90c5-4ced-968b-5a6f6de8e163"
+ *                     testCases:
+ *                       - input: "5 7"
+ *                         expectedOutput: "12"
+ *                         order: 0
+ *                         actualOutput: "13\n"
+ *                         stderr: ""
+ *                         compilationOutput: ""
+ *                         executionTime: 25
+ *                         exitCode: 0
+ *                         passed: false
+ *                         success: false
+ *                       - input: "10 -5"
+ *                         expectedOutput: "5"
+ *                         order: 1
+ *                         actualOutput: "5\n"
+ *                         stderr: ""
+ *                         compilationOutput: ""
+ *                         executionTime: 24
+ *                         exitCode: 0
+ *                         passed: true
+ *                         success: true
+ *                     summary:
+ *                       totalTests: 2
+ *                       passedTests: 1
+ *                       failedTests: 1
+ *                       successRate: 50
+ *                       totalExecutionTime: 49
+ *                       avgExecutionTime: 24.5
+ *                       allPassed: false
+ *       400:
+ *         description: Bad request, invalid input
  *       401:
  *         $ref: '#/components/responses/UnauthorizedError'
+ *       404:
+ *         description: Language not found or not supported
+ *       500:
+ *         $ref: '#/components/responses/ServerError'
  */
-router.get("/executions/:id", verifyToken, codeRunnerController.getExecutionById);
+router.post("/run-tests", verifyToken, codeRunnerController.runTestCases);
 
 /**
  * @swagger
@@ -222,9 +327,214 @@ router.get("/executions/:id", verifyToken, codeRunnerController.getExecutionById
  *     responses:
  *       200:
  *         description: Code executions retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 executions:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/CodeExecution'
+ *                 pagination:
+ *                   type: object
+ *                   properties:
+ *                     total:
+ *                       type: integer
+ *                     page:
+ *                       type: integer
+ *                     limit:
+ *                       type: integer
+ *                     pages:
+ *                       type: integer
  *       401:
  *         $ref: '#/components/responses/UnauthorizedError'
  */
 router.get("/executions", verifyToken, codeRunnerController.getUserExecutions);
+
+/**
+ * @swagger
+ * /code/executions/{id}:
+ *   get:
+ *     summary: Get code execution by ID
+ *     description: Retrieve details of a specific code execution
+ *     tags: [Code Execution]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: ID of the code execution to retrieve
+ *     responses:
+ *       200:
+ *         description: Code execution retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 execution:
+ *                   $ref: '#/components/schemas/CodeExecution'
+ *       404:
+ *         $ref: '#/components/responses/NotFoundError'
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
+ */
+router.get("/executions/:id", verifyToken, codeRunnerController.getExecutionById);
+
+/**
+ * @swagger
+ * /code/executions/{id}/test-results:
+ *   get:
+ *     summary: Get test case results for a code execution
+ *     description: Retrieve all test case results for a specific code execution
+ *     tags: [Code Execution]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: ID of the code execution
+ *     responses:
+ *       200:
+ *         description: Test case results retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 results:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/TestCase'
+ *       404:
+ *         $ref: '#/components/responses/NotFoundError'
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
+ */
+router.get("/executions/:id/test-results", verifyToken, codeRunnerController.getTestCaseResults);
+
+/**
+ * @swagger
+ * /code/executions/{id}/persistence:
+ *   put:
+ *     summary: Update the persistence flag for a code execution
+ *     description: Mark a code execution as persistent to prevent it from being automatically cleaned up
+ *     tags: [Code Execution]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: ID of the code execution
+ *     requestBody:
+ *       $ref: '#/components/requestBodies/UpdatePersistenceFlag'
+ *     responses:
+ *       200:
+ *         description: Persistence flag updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Persistence flag updated successfully"
+ *                 execution:
+ *                   $ref: '#/components/schemas/CodeExecution'
+ *       400:
+ *         description: Bad request, invalid input
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
+ *       404:
+ *         $ref: '#/components/responses/NotFoundError'
+ */
+router.put("/executions/:id/persistence", verifyToken, codeRunnerController.updatePersistence);
+
+/**
+ * @swagger
+ * /code/cleanup:
+ *   post:
+ *     summary: Manually trigger cleanup of old code executions
+ *     description: Delete old code executions and their associated test cases based on age
+ *     tags: [Code Execution]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       $ref: '#/components/requestBodies/CleanupRequestBody'
+ *     responses:
+ *       200:
+ *         description: Cleanup operation completed
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/CleanupResponse'
+ *       400:
+ *         description: Bad request, invalid input
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
+ *       403:
+ *         description: Forbidden, requires admin privileges
+ */
+router.post("/cleanup", verifyToken, isAdmin, cleanupController.manualCleanup);
+
+/**
+ * @swagger
+ * /code/cleanup/config:
+ *   get:
+ *     summary: Get cleanup configuration and status
+ *     description: Retrieve current configuration for the automatic cleanup process
+ *     tags: [Code Execution]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Configuration retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 config:
+ *                   type: object
+ *                   properties:
+ *                     enabled:
+ *                       type: boolean
+ *                     cleanupIntervalHours:
+ *                       type: integer
+ *                     retentionDays:
+ *                       type: integer
+ *                     lastCleanup:
+ *                       type: string
+ *                       format: date-time
+ *                     nextScheduledCleanup:
+ *                       type: string
+ *                       format: date-time
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
+ *       403:
+ *         description: Forbidden, requires admin privileges
+ */
+router.get("/cleanup/config", verifyToken, isAdmin, cleanupController.getCleanupConfig);
 
 module.exports = router;

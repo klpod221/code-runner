@@ -89,22 +89,20 @@ const languageConfigs = {
  * @param {string} options.language - Programming language name (nodejs, python, java, etc.)
  * @param {Array<Object>} options.files - Array of file objects { name, content, isMain }
  * @param {string} options.stdin - Standard input (optional)
- * @param {string} options.requestId - Request ID for logging (optional)
+ * @param {string} options.executionId - Request ID for logging (optional)
  * @returns {Promise<Object>} Execution result
  */
-async function executeCode({ language, files, stdin = "", requestId = "unknown" }) {
+async function executeCode({ language, files, stdin = "", executionId = "" }) {
   // Validate language support
   if (!languageConfigs[language]) {
     throw new Error(`Unsupported language: ${language}`);
   }
 
   // Create a unique execution ID and temp directory
-  const executionId = uuidv4();
-  const tempDir = path.join(BASE_TEMP_DIR, executionId);
+  const execution = executionId || uuidv4();
+  const tempDir = path.join(BASE_TEMP_DIR, execution);
 
   try {
-    console.log(`[${requestId}] Creating execution directory: ${tempDir}`);
-    
     // Ensure base directory exists first with proper permissions
     await fs.ensureDir(BASE_TEMP_DIR, { mode: 0o755 });
     
@@ -116,8 +114,6 @@ async function executeCode({ language, files, stdin = "", requestId = "unknown" 
     if (!dirExists) {
       throw new Error(`Failed to create temporary directory: ${tempDir}`);
     }
-
-    console.log(`[${requestId}] Created execution directory successfully`);
 
     // Find the main file or use the first file
     const mainFile = files.find((file) => file.isMain) || files[0];
@@ -170,7 +166,7 @@ async function executeCode({ language, files, stdin = "", requestId = "unknown" 
     if (config.compile) {
       try {
         const compileCmd = config.compile(mainFile.name);
-        console.log(`[${executionId}] Compiling: ${compileCmd}`);
+        console.log(`[${execution}] Compiling: ${compileCmd}`);
 
         const { stdout, stderr } = await execPromise(compileCmd, {
           cwd: tempDir,
@@ -215,14 +211,9 @@ async function executeCode({ language, files, stdin = "", requestId = "unknown" 
         runCmd += ` < input.txt`;
       }
 
-      // Add memory limit if supported by the OS
-      if (process.platform === 'linux') {
-        // Use ulimit to restrict memory usage (in KB)
-        const memoryLimitKB = settingsCache.MAX_MEMORY * 1024;
-        runCmd = `ulimit -v ${memoryLimitKB} && ${runCmd}`;
-      }
-
-      console.log(`[${executionId}] Executing: ${runCmd} with timeout: ${config.timeout}ms`);
+      console.log(
+        `[${execution}] Executing: ${runCmd} with timeout: ${config.timeout}ms`
+      );
 
       const { stdout, stderr } = await execPromise(runCmd, {
         cwd: tempDir,
@@ -269,9 +260,10 @@ async function executeCode({ language, files, stdin = "", requestId = "unknown" 
     // Clean up the temporary directory
     try {
       await fs.remove(tempDir);
-      console.log(`[${requestId}] Successfully cleaned up temp directory: ${tempDir}`);
     } catch (error) {
-      console.error(`[${requestId}] Failed to clean up temp directory: ${error.message}`);
+      console.error(
+        `[${execution}] Failed to clean up temp directory: ${error.message}`
+      );
     }
   }
 }

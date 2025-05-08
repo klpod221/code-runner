@@ -1,192 +1,192 @@
-# Code Runner API
+<div align="center">
+    <h1>--// Code Runner API //--</h1>
+    <img src="https://img.shields.io/github/last-commit/klpod221/code-runner?style=for-the-badge&color=ffb4a2&labelColor=201a19">
+    <img src="https://img.shields.io/github/stars/klpod221/code-runner?style=for-the-badge&color=e6c419&labelColor=1d1b16">
+    <img src="https://img.shields.io/github/repo-size/klpod221/code-runner?style=for-the-badge&color=a8c7ff&labelColor=1a1b1f">
+</div>
 
-A RESTful API service for executing code in multiple programming languages (Node.js, Python, C, C++, Java) with security features and user management.
+## Overview
 
-## Project Structure
-
-The project follows a standard Node.js/Express application structure:
-
-- `src/` - Source code directory
-  - `controllers/` - Request handlers
-  - `middleware/` - Express middleware
-  - `models/` - Database models (Sequelize)
-  - `routes/` - API route definitions
-  - `config/` - Configuration files
-  - `index.js` - Main application entry point
+Code Runner API provides a platform for executing code in different programming languages through a RESTful API. It's designed with security, scalability, and performance in mind, making it suitable for educational platforms, coding challenges, and automated assessment systems.
 
 ## Features
 
-- Execute code in multiple programming languages (Node.js, Python, C, C++, Java)
-- Support for multi-file code execution
-- User authentication and authorization
-- Code execution history tracking
-- Base64 encoding option for code content
-- API documentation with Swagger UI
-- Database integration with PostgreSQL and Sequelize
-- Security features: rate limiting, CORS, helmet protection
+- **Multi-language Support**: Run code in multiple programming languages including JavaScript, Python, Java, C, C++, and more
+- **Secure Execution**: Code runs in isolated environments to prevent system compromise
+- **Test Case Support**: Execute code against predefined test cases and validate outputs
+- **API Documentation**: Comprehensive Swagger documentation
+- **Authentication**: JWT-based authentication system
+- **Rate Limiting**: Configurable request rate limiting to prevent abuse
+- **Database Integration**: PostgreSQL database for storing user data, execution results, and settings
+- **Customizable Settings**: Dynamic settings management via API
 
-## Docker Setup
+## Tech Stack
 
-### Prerequisites
+- **Backend**: Node.js, Express
+- **Database**: PostgreSQL with Sequelize ORM
+- **Documentation**: Swagger/OpenAPI
+- **Containerization**: Docker
+- **Security**: Helmet, CORS, Rate Limiting
+- **Logging**: Morgan, Winston
 
-- Docker
-- Docker Compose
+## Prerequisites
 
-### Running with Docker
+- Docker and Docker Compose
+- Node.js (for local development)
+- PostgreSQL (or use the provided Docker container)
+
+## Getting Started
+
+### Using Docker (Recommended)
+
+This method is recommended for running the application in a secure environment.
 
 1. Clone the repository:
+   ```bash
+   git clone https://github.com/klpod221/code-runner.git
+   cd code-runner
+   ```
 
-```bash
-git clone <repository-url>
-cd code-runner
-```
+2. Create a `.env` file in the project root (see `.env.example` for required values)
 
-2. Create a `.env` file based on the `.env.example`:
+3. Start the application:
+   ```bash
+   docker-compose up -d
+   ```
 
-```bash
-cp .env.example .env
-```
+4. Access the API at http://localhost:3000 and the API documentation at http://localhost:3000/docs
 
-Fill in the required environment variables, especially for database connection.
+### Local Development
 
-3. Build and start the containers:
+**I not recommend this method, because it is not secure. I will not be responsible for any damage to your machine or data loss.**
+This method is not secure, because it runs the code on your local machine. It is not recommended to run untrusted code on your local machine. Use Docker for a secure environment.
 
-```bash
-docker-compose up -d
-```
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/klpod221/code-runner.git
+   cd code-runner
+   ```
 
-4. The API will be available at `http://localhost:3000` with documentation at `http://localhost:3000/api-docs`
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
 
-### Docker Management Commands
+3. Set up your PostgreSQL database
 
-- Start containers: `docker-compose up -d`
-- Stop containers: `docker-compose down`
-- View logs: `docker-compose logs -f api`
-- Rebuild containers: `docker-compose build`
-- Run migrations: `docker-compose exec api npm run migrate`
-- Seed database: `docker-compose exec api npm run seed`
+4. Intall all dependencies for code execution like jdk, node, python, gcc, g++, etc. on your local machine.
+
+   For example, on Ubuntu:
+   ```bash
+   sudo apt-get install openjdk-17-jdk nodejs npm python3 gcc g++
+   ```
+
+   For MacOS, you can use Homebrew:
+   ```bash
+   brew install openjdk@17 node python3 gcc
+   ```
+
+5. Create a `.env` file with your configuration values (see `.env.example` for required values)
+
+6. Run database migrations:
+   ```bash
+   npm run migrate
+   npm run seed
+   ```
+
+7. Start the development server:
+   ```bash
+   npm run dev
+   ```
 
 ## API Endpoints
 
 ### Authentication
-
-- `POST /api/auth/register` - Register a new user
-- `POST /api/auth/login` - Login existing user
-- `GET /api/auth/profile` - Get current user profile (requires authentication)
-
-### Languages
-
-- `GET /api/languages` - Get all supported programming languages
-- `GET /api/languages/:id` - Get specific language by ID
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST   | /api/auth/register | Register a new user |
+| POST   | /api/auth/login | Authenticate a user |
+| GET    | /api/auth/profile | Get authenticated user's profile |
 
 ### Code Execution
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST   | /api/code/run | Execute code in selected language |
+| POST   | /api/code/run-tests | Execute code with test cases |
+| GET    | /api/code/executions | Get user's code execution history |
+| GET    | /api/code/executions/:id | Get specific code execution details |
+| GET    | /api/code/executions/:id/test-results | Get test case results for a code execution |
+| PUT    | /api/code/executions/:id/persistence | Update persistence flag for a code execution |
+| POST   | /api/code/cleanup | Trigger cleanup of old executions (admin only) |
+| GET    | /api/code/cleanup/config | Get cleanup configuration (admin only) |
 
-- `POST /api/code/run` - Execute code in the specified language (requires authentication)
-- `GET /api/code/executions` - Get user's code execution history (requires authentication)
-- `GET /api/code/executions/:id` - Get specific execution details by ID (requires authentication)
+### Languages
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET    | /api/languages | List all supported languages |
+| GET    | /api/languages/:id | Get specific language details |
 
-## Usage Examples
+### System Health
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET    | /api/health | Basic API health check |
+| GET    | /api/health/db | Database connection health check |
+| GET    | /api/health/languages | Programming language support health check |
+| GET    | /api/health/full | Complete system health report |
 
-### Running Code
+### Settings
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET    | /api/settings | Get all application settings (admin only) |
+| GET    | /api/settings/categories | Get settings organized by category (admin only) |
+| PUT    | /api/settings | Update an application setting (admin only) |
 
-#### Single File Execution
+For detailed API documentation, visit the Swagger UI at `/docs` when the server is running.
 
-To execute a single file of code, send a POST request to `/api/code/run` with the following payload:
+## Available Scripts
 
-```json
-{
-  "languageId": "550e8400-e29b-41d4-a716-446655440000",
-  "code": "console.log('Hello, World!');",
-  "stdin": "",
-  "isBase64Encoded": false
-}
+- `npm start` - Start the production server
+- `npm run dev` - Start the development server with hot-reload
+- `npm test` - Run tests
+- `npm run migrate` - Run database migrations
+- `npm run seed` - Seed the database with initial data
+- `npm run lint` - Run ESLint
+
+## Environment Variables
+
+Create a `.env` file in the root directory with the following variables:
+
 ```
+# Server Configuration
+NODE_ENV=development
+DOMAIN=http://localhost
+PORT=3000
 
-#### Multi-file Execution
+# Database Configuration
+DB_HOST=db
+DB_PORT=5432
+DB_USER=postgres
+DB_PASSWORD=postgres
+DB_NAME=code_runner
 
-For multi-file execution:
+# Authentication (let JWT_EXPIRATION empty for no expiration)
+JWT_SECRET=your_jwt_secret_key_change_in_production
+JWT_EXPIRATION=24h
 
-```json
-{
-  "languageId": "550e8400-e29b-41d4-a716-446655440000",
-  "files": [
-    {
-      "name": "main.js",
-      "content": "const utils = require('./utils.js');\nconst calculator = require('./calculator.js');\n\nconsole.log(utils.formatNumber(calculator.add(5, 10)));",
-      "isMain": true
-    },
-    {
-      "name": "utils.js",
-      "content": "module.exports = {\n  formatNumber: (num) => `Result: ${num}`\n};"
-    },
-    {
-      "name": "calculator.js",
-      "content": "module.exports = {\n  add: (a, b) => a + b,\n  subtract: (a, b) => a - b\n};"
-    }
-  ],
-  "stdin": "",
-  "isBase64Encoded": false
-}
+# Language Versions
+# These are used for health checks and version reporting
+NODEJS_VERSION=20
+PYTHON_VERSION=3
+JAVA_VERSION=17
+CPP_VERSION=11
+C_VERSION=11
+
 ```
-
-#### With Base64 Encoding
-
-You can also encode your content using Base64 for data integrity:
-
-```json
-{
-  "languageId": "550e8400-e29b-41d4-a716-446655440000",
-  "files": [
-    {
-      "name": "main.js",
-      "content": "Y29uc3QgdXRpbHMgPSByZXF1aXJlKCcuL3V0aWxzLmpzJyk7CmNvbnN0IGNhbGN1bGF0b3IgPSByZXF1aXJlKCcuL2NhbGN1bGF0b3IuanMnKTsKCmNvbnNvbGUubG9nKHV0aWxzLmZvcm1hdE51bWJlcihjYWxjdWxhdG9yLmFkZCg1LCAxMCkpKTs=",
-      "isMain": true
-    },
-    {
-      "name": "utils.js",
-      "content": "bW9kdWxlLmV4cG9ydHMgPSB7CiAgZm9ybWF0TnVtYmVyOiAobnVtKSA9PiBgUmVzdWx0OiAke251bX1gCn07"
-    },
-    {
-      "name": "calculator.js",
-      "content": "bW9kdWxlLmV4cG9ydHMgPSB7CiAgYWRkOiAoYSwgYikgPT4gYSArIGIsCiAgc3VidHJhY3Q6IChhLCBiKSA9PiBhIC0gYgp9Ow=="
-    }
-  ],
-  "stdin": "",
-  "isBase64Encoded": true
-}
-```
-
-### Response Format
-
-```json
-{
-  "message": "Code execution completed",
-  "result": {
-    "id": "550e8400-e29b-41d4-a716-446655440000",
-    "stdout": "Result: 15\n",
-    "stderr": "",
-    "compilationOutput": "",
-    "executionTime": 42,
-    "memoryUsage": 1024,
-    "exitCode": 0,
-    "success": true
-  }
-}
-```
-
-## Security Features
-
-- JWT-based authentication
-- Password hashing with bcryptjs
-- Rate limiting to prevent abuse
-- Helmet for setting security-related HTTP headers
-- Input validation with Yup
-- Error logging with Winston
-
-## API Documentation
-
-The API documentation is available via Swagger UI at `/api-docs` when the server is running.
 
 ## License
 
-MIT License
+[MIT License](LICENSE)
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.

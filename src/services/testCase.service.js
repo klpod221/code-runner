@@ -7,17 +7,17 @@ const { executeCode } = require("./codeExecutor.service");
  * @param {string} options.language - Programming language name
  * @param {Array<Object>} options.files - Array of file objects { name, content, isMain }
  * @param {Array<Object>} options.testCases - Array of test case objects { input, expectedOutput, order }
- * @param {string} options.requestId - Request ID for logging (optional)
+ * @param {string} options.executionId - Execution ID for logging (optional)
  * @returns {Promise<Array<Object>>} Array of test case results
  */
-async function executeTestCases({ language, files, testCases, requestId = "unknown" }) {
+async function executeTestCases({ language, files, testCases, executionId = "" }) {
   const results = [];
 
-  console.log(`[${requestId}] Executing ${testCases.length} test cases for ${language}`);
+  console.log(`[${executionId}] Executing ${testCases.length} test cases for ${language}`);
 
   for (let i = 0; i < testCases.length; i++) {
     const testCase = testCases[i];
-    console.log(`[${requestId}] Executing test case #${i + 1} (order: ${testCase.order})`);
+    console.log(`[${executionId}] Executing test case #${i + 1} (order: ${testCase.order})`);
 
     try {
       // Execute code with test case input
@@ -25,7 +25,7 @@ async function executeTestCases({ language, files, testCases, requestId = "unkno
         language,
         files,
         stdin: testCase.input || "",
-        requestId,
+        executionId,
       });
 
       // Compare output with expected output
@@ -44,7 +44,7 @@ async function executeTestCases({ language, files, testCases, requestId = "unkno
         success: executionResult.success && passed,
       });
     } catch (error) {
-      console.error(`[${requestId}] Test case execution error:`, error);
+      console.error(`[${executionId}] Test case execution error:`, error);
       
       results.push({
         ...testCase,

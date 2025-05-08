@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Code Runner API</title>
+
+  <meta name="description"
+    content="Code Runner API - Execute code in multiple languages through a secure, scalable, and performant RESTful API.">
+  <meta name="keywords" content="Code Runner, API, Code Execution, Programming Languages, RESTful API">
+  <meta name="author" content="klpod221">
+  <link rel="icon" href="/favicon.ico" type="image/x-icon">
+
+  <!-- Google Fonts - JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <style>
+    body {
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100" height="100" fill="none"/><path d="M20,20 L80,20 L80,80 L20,80 Z" stroke="rgba(255,255,255,0.05)" fill="none" stroke-width="2"/></svg>');
+      z-index: 0;
+    }
+
+    .code-block {
+      background-color: #0f172a;
+      border-radius: 0.5rem;
+      padding: 1.5rem;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+
+    .code-block pre {
+      margin: 0;
+    }
+
+    .code-block .comment {
+      color: #94a3b8;
+    }
+
+    .code-block .keyword {
+      color: #38bdf8;
+    }
+
+    .code-block .function {
+      color: #818cf8;
+    }
+
+    .code-block .string {
+      color: #4ade80;
+    }
+
+    .code-block .value {
+      color: #fbbf24;
+    }
+
+    .feature-icon {
+      font-size: 2rem;
+      color: #3b82f6;
+      margin-bottom: 1rem;
+    }
+  </style>
+</head>
+
+<body class="bg-white text-gray-800">
+  <!-- Hero Section -->
+  <section class="hero py-24 bg-[#1e293b] text-white relative overflow-hidden">
+    <div class="container relative mx-auto px-4 z-10">
+      <div class="flex flex-col lg:flex-row items-center gap-4">
+        <div class="w-full lg:w-1/2 mb-8 lg:mb-0">
+          <h1 class="text-4xl md:text-5xl font-bold mb-4">Code Runner API</h1>
+          <p class="text-xl mb-8 text-gray-300">
+            Execute code in multiple languages through a secure, scalable, and
+            performant RESTful API.</p>
+          <div class="flex flex-wrap gap-4">
+            <a href="/docs"
+              class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg transition duration-300">API
+              Documentation</a>
+            <a href="https://github.com/klpod221/code-runner"
+              class="bg-transparent hover:bg-white/10 text-white border border-white font-medium py-3 px-6 rounded-lg transition duration-300">
+              <i class="fab fa-github mr-2"></i>GitHub
+            </a>
+          </div>
+        </div>
+        <div class="w-full lg:w-1/2 hidden lg:block">
+          <div class="code-block">
+            <pre><code><span class="comment">// Execute code with a simple API call</span>
+<span class="keyword">fetch</span>(<span class="string">'https://code-runner.klpod221.com/api/code/run'</span>, {
+  <span class="function">method</span>: <span class="string">'POST'</span>,
+  <span class="function">headers</span>: {
+    <span class="string">'Content-Type'</span>: <span class="string">'application/json'</span>,
+    <span class="string">'Authorization'</span>: <span class="string">'Bearer YOUR_TOKEN'</span>
+  },
+  <span class="function">body</span>: <span class="function">JSON.stringify</span>({
+    <span class="string">'languageId'</span>: <span class="string">'bbdef3b0-a774-4382-9a9e-b263b8a46701'</span>, <span class="comment">// Python ID</span>
+    <span class="string">'code'</span>: <span class="string">'print("Hello, World!")'</span>, <span class="comment">// Your code here</span>
+    <span class="string">'stdin'</span>: <span class="string">''</span>, <span class="comment">// Optional input</span>
+    <span class="string">'isBase64Encoded'</span>: <span class="value">false</span> <span class="comment">// Optional</span>
+  })
+})
+.<span class="function">then</span>(response => response.<span class="function">json</span>())
+.<span class="function">then</span>(data => <span class="function">console.log</span>(data));</code></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features Section -->
+  <section class="py-20">
+    <div class="container mx-auto px-4">
+      <div class="text-center mb-16">
+        <h2 class="text-3xl md:text-4xl font-bold mb-4">Key Features</h2>
+        <p class="text-xl text-gray-600">
+          Code Runner API provides a simple and powerful way to execute code in various programming languages.
+          <br>It is designed to be secure, scalable, and easy to integrate into your applications.
+        </p>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div class="bg-white rounded-lg shadow-md hover:shadow-xl transition duration-300 p-6">
+          <div class="feature-icon flex justify-center">
+            <i class="fas fa-code"></i>
+          </div>
+          <h5 class="text-xl font-semibold mb-3 text-center">Multi-language Support</h5>
+          <p class="text-gray-600 text-center">Execute code in JavaScript, Python, Java, C, C++, and more programming
+            languages.</p>
+        </div>
+        <div class="bg-white rounded-lg shadow-md hover:shadow-xl transition duration-300 p-6">
+          <div class="feature-icon flex justify-center">
+            <i class="fas fa-shield-alt"></i>
+          </div>
+          <h5 class="text-xl font-semibold mb-3 text-center">Secure Execution</h5>
+          <p class="text-gray-600 text-center">Code runs in isolated environments to ensure security and prevent system
+            compromise.</p>
+        </div>
+        <div class="bg-white rounded-lg shadow-md hover:shadow-xl transition duration-300 p-6">
+          <div class="feature-icon flex justify-center">
+            <i class="fas fa-vial"></i>
+          </div>
+          <h5 class="text-xl font-semibold mb-3 text-center">Test Case Support</h5>
+          <p class="text-gray-600 text-center">Execute code against predefined test cases and validate outputs for
+            assessment.</p>
+        </div>
+        <div class="bg-white rounded-lg shadow-md hover:shadow-xl transition duration-300 p-6">
+          <div class="feature-icon flex justify-center">
+            <i class="fas fa-file-alt"></i>
+          </div>
+          <h5 class="text-xl font-semibold mb-3 text-center">API Documentation</h5>
+          <p class="text-gray-600 text-center">Comprehensive Swagger documentation for easy integration with your
+            applications.</p>
+        </div>
+        <div class="bg-white rounded-lg shadow-md hover:shadow-xl transition duration-300 p-6">
+          <div class="feature-icon flex justify-center">
+            <i class="fas fa-lock"></i>
+          </div>
+          <h5 class="text-xl font-semibold mb-3 text-center">Authentication</h5>
+          <p class="text-gray-600 text-center">JWT-based authentication system for secure access to API endpoints.</p>
+        </div>
+        <div class="bg-white rounded-lg shadow-md hover:shadow-xl transition duration-300 p-6">
+          <div class="feature-icon flex justify-center">
+            <i class="fas fa-cogs"></i>
+          </div>
+          <h5 class="text-xl font-semibold mb-3 text-center">Base64 Encoding</h5>
+          <p class="text-gray-600 text-center">Code and test cases are sent as Base64 encoded strings for secure
+            transmission.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Languages Section -->
+  <section class="bg-gray-100 py-20">
+    <div class="container mx-auto px-4">
+      <div class="text-center mb-16">
+        <h2 class="text-3xl md:text-4xl font-bold mb-4">Supported Languages</h2>
+        <p class="text-xl text-gray-600">Execute code in various programming languages</p>
+      </div>
+      <div class="flex flex-wrap justify-center">
+        <span class="bg-blue-600 text-white rounded-full py-3 px-6 m-2 text-lg font-medium">JavaScript</span>
+        <span class="bg-blue-600 text-white rounded-full py-3 px-6 m-2 text-lg font-medium">Python</span>
+        <span class="bg-blue-600 text-white rounded-full py-3 px-6 m-2 text-lg font-medium">Java</span>
+        <span class="bg-blue-600 text-white rounded-full py-3 px-6 m-2 text-lg font-medium">C</span>
+        <span class="bg-blue-600 text-white rounded-full py-3 px-6 m-2 text-lg font-medium">C++</span>
+        <span class="bg-blue-600 text-white rounded-full py-3 px-6 m-2 text-lg font-medium">And I am Working On
+          More...</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- API Overview Section -->
+  <section class="py-20">
+    <div class="container mx-auto px-4">
+      <div class="text-center mb-16">
+        <h2 class="text-3xl md:text-4xl font-bold mb-4">API Overview</h2>
+        <p class="text-xl text-gray-600">Simple and powerful endpoints for code execution</p>
+      </div>
+      <div class="flex justify-center">
+        <div class="w-full lg:w-4/5">
+          <div class="overflow-x-auto">
+            <table class="min-w-full border border-gray-300">
+              <thead>
+                <tr class="bg-gray-800 text-white">
+                  <th class="px-6 py-4 text-left">Endpoint</th>
+                  <th class="px-6 py-4 text-left">Description</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="border-b">
+                  <td class="px-6 py-4"><code class="bg-gray-100 px-2 py-1 rounded">/api/code/run</code></td>
+                  <td class="px-6 py-4">Execute code in selected language</td>
+                </tr>
+                <tr class="border-b">
+                  <td class="px-6 py-4"><code class="bg-gray-100 px-2 py-1 rounded">/api/code/run-tests</code></td>
+                  <td class="px-6 py-4">Execute code with test cases</td>
+                </tr>
+                <tr class="border-b">
+                  <td class="px-6 py-4"><code class="bg-gray-100 px-2 py-1 rounded">/api/languages</code></td>
+                  <td class="px-6 py-4">List all supported languages</td>
+                </tr>
+                <tr class="border-b">
+                  <td class="px-6 py-4"><code class="bg-gray-100 px-2 py-1 rounded">/api/auth/register</code></td>
+                  <td class="px-6 py-4">Register a new user</td>
+                </tr>
+                <tr class="border-b">
+                  <td class="px-6 py-4"><code class="bg-gray-100 px-2 py-1 rounded">/api/auth/login</code></td>
+                  <td class="px-6 py-4">Authenticate a user</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="text-center mt-8">
+            <a href="/docs"
+              class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg transition duration-300">View
+              Full API Documentation</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Getting Started Section -->
+  <section class="bg-gray-100 py-20">
+    <div class="container mx-auto px-4">
+      <div class="text-center mb-16">
+        <h2 class="text-3xl md:text-4xl font-bold mb-4">Getting Started</h2>
+        <p class="text-xl text-gray-600">Quick start guide to use Code Runner API</p>
+      </div>
+      <div class="flex justify-center">
+        <div class="w-full lg:w-4/5">
+          <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+            <div class="bg-gray-800 text-white px-6 py-4 flex">
+              <h5 class="text-xl font-semibold">Using Docker (Recommended)</h5>
+            </div>
+            <div class="p-6">
+              <ol class="space-y-6 list-decimal list-inside">
+                <li>Clone the repository:
+                  <div class="bg-gray-100 p-4 mt-2 rounded-lg text-sm">
+                    git clone https://github.com/klpod221/code-runner.git<br>cd code-runner
+                  </div>
+                </li>
+                <li>Create a <code class="bg-gray-100 px-2 py-1 rounded">.env</code> file in the project root (see <code
+                    class="bg-gray-100 px-2 py-1 rounded">.env.example</code> for required values)</li>
+                <li>Start the application:
+                  <div class="bg-gray-100 p-4 mt-2 rounded-lg text-sm">
+                    docker-compose up -d
+                  </div>
+                </li>
+                <li>Access the API at <a href="http://localhost:3000"
+                    class="text-blue-600 hover:text-blue-800">http://localhost:3000</a> and the API documentation at <a
+                    href="http://localhost:3000/docs"
+                    class="text-blue-600 hover:text-blue-800">http://localhost:3000/docs</a></li>
+              </ol>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="bg-gray-800 text-white py-8">
+    <div class="container mx-auto px-4">
+      <div class="flex flex-col md:flex-row justify-between items-center">
+        <div class="text-center md:text-left mb-4 md:mb-0">
+          <p class="mb-1">&copy;2025 Code Runner API. MIT License.</p>
+          <p>Made with <i class="fas fa-heart text-red-500"></i> by <a href="https://klpod221.com"
+              class="text-blue-400 hover:text-blue-300">klpod221</a></p>
+        </div>
+        <div>
+          <a href="https://github.com/klpod221/code-runner"
+            class="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition duration-300 inline-flex items-center">
+            <i class="fab fa-github mr-2"></i>Star on GitHub
+          </a>
+        </div>
+      </div>
+    </div>
+  </footer>
+</body>
+
+</html>

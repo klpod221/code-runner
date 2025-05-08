@@ -101,10 +101,6 @@ exports.runCode = async (req, res) => {
     } = req.body;
     const userId = req.user.id;
 
-    console.log(
-      `[${req.id}] Processing code execution request. Language ID: ${languageId}`
-    );
-
     // Validate request body
     const codeValidation = validateCodeInput(code, files);
     if (!codeValidation.isValid) {
@@ -122,11 +118,6 @@ exports.runCode = async (req, res) => {
     }
     
     const language = languageValidation.language;
-
-    console.log(
-      `[${req.id}] Processing code execution for language: ${language.name}`
-    );
-
     // Create a record in database
     const codeExecution = await CodeExecution.create({
       userId,
@@ -138,19 +129,12 @@ exports.runCode = async (req, res) => {
       isPersistent: Boolean(isPersistent), // Set the persistence flag
     });
 
-    console.log(
-      `[${req.id}] Created code execution record with ID: ${codeExecution.id}${isPersistent ? ' (persistent)' : ''}`
-    );
-
     // Prepare files for execution
     let filesToExecute = [];
     try {
       filesToExecute = prepareFilesForExecution(language, code, files, isBase64Encoded);
-      console.log(
-        `[${req.id}] Prepared ${filesToExecute.length} file(s) for execution`
-      );
     } catch (fileError) {
-      console.error(`[${req.id}] Error preparing files: ${fileError.message}`);
+      console.error(`[${codeExecution.id}] Error preparing files: ${fileError.message}`);
       await codeExecution.update({
         status: "failed",
         error: `Failed to prepare files: ${fileError.message}`,
@@ -168,7 +152,7 @@ exports.runCode = async (req, res) => {
       decodedStdin = decodeInput(stdin, isBase64Encoded);
     } catch (stdinError) {
       console.error(
-        `[${req.id}] Error decoding stdin: ${stdinError.message}`
+        `[${codeExecution.id}] Error decoding stdin: ${stdinError.message}`
       );
       await codeExecution.update({
         status: "failed",
@@ -183,16 +167,15 @@ exports.runCode = async (req, res) => {
 
     // Execute code
     try {
-      console.log(`[${req.id}] Executing ${language.name} code...`);
-
       const result = await executeCode({
         language: language.name,
         files: filesToExecute,
         stdin: decodedStdin || "",
+        executionId: codeExecution.id,
       });
 
       console.log(
-        `[${req.id}] Code execution completed with status: ${
+        `[${codeExecution.id}] Code execution completed with status: ${
           result.success ? "success" : "failure"
         }`
       );
@@ -224,7 +207,7 @@ exports.runCode = async (req, res) => {
       });
     } catch (error) {
       console.error(
-        `[${req.id}] Error during code execution: ${error.message}`
+        `[${codeExecution.id}] Error during code execution: ${error.message}`
       );
       console.error(error.stack);
 
@@ -261,10 +244,6 @@ exports.runTestCases = async (req, res) => {
       isPersistent = false, // New parameter to mark execution as persistent
     } = req.body;
     const userId = req.user.id;
-
-    console.log(
-      `[${req.id}] Processing test case execution request. Language ID: ${languageId}`
-    );
 
     // Validate request body
     const codeValidation = validateCodeInput(code, files);
@@ -304,10 +283,6 @@ exports.runTestCases = async (req, res) => {
     
     const language = languageValidation.language;
 
-    console.log(
-      `[${req.id}] Processing test case execution for language: ${language.name}`
-    );
-
     // Create a record in database
     const codeExecution = await CodeExecution.create({
       userId,
@@ -319,19 +294,12 @@ exports.runTestCases = async (req, res) => {
       isPersistent: Boolean(isPersistent), // Set the persistence flag
     });
 
-    console.log(
-      `[${req.id}] Created code execution record with ID: ${codeExecution.id}${isPersistent ? ' (persistent)' : ''}`
-    );
-
     // Prepare files for execution
     let filesToExecute = [];
     try {
       filesToExecute = prepareFilesForExecution(language, code, files, isBase64Encoded);
-      console.log(
-        `[${req.id}] Prepared ${filesToExecute.length} file(s) for test case execution`
-      );
     } catch (fileError) {
-      console.error(`[${req.id}] Error preparing files: ${fileError.message}`);
+      console.error(`[${codeExecution.id}] Error preparing files: ${fileError.message}`);
       await codeExecution.update({
         status: "failed",
         error: `Failed to prepare files: ${fileError.message}`,
@@ -361,22 +329,18 @@ exports.runTestCases = async (req, res) => {
 
     // Execute test cases
     try {
-      console.log(
-        `[${req.id}] Executing ${processedTestCases.length} test cases for ${language.name} code...`
-      );
-
       const testResults = await executeTestCases({
         language: language.name,
         files: filesToExecute,
         testCases: processedTestCases,
-        requestId: req.id,
+        executionId: codeExecution.id,
       });
 
       // Calculate overall results
       const overallResults = calculateTestResults(testResults);
 
       console.log(
-        `[${req.id}] Test case execution completed. Passed: ${overallResults.passedTests}/${overallResults.totalTests}`
+        `[${codeExecution.id}] Test case execution completed. Passed: ${overallResults.passedTests}/${overallResults.totalTests}`
       );
 
       // Save test case results to database
@@ -410,7 +374,7 @@ exports.runTestCases = async (req, res) => {
       });
     } catch (error) {
       console.error(
-        `[${req.id}] Error during test case execution: ${error.message}`
+        `[${codeExecution.id}] Error during test case execution: ${error.message}`
       );
       console.error(error.stack);
 
@@ -588,7 +552,7 @@ exports.updatePersistence = async (req, res) => {
     await codeExecution.update({ isPersistent: Boolean(isPersistent) });
 
     console.log(
-      `[${req.id}] Updated persistence flag to ${isPersistent} for execution ${id} by user ${userId}`
+      `[${codeExecution.id}] Updated persistence flag to ${isPersistent} for execution ${id} by user ${userId}`
     );
 
     res.status(200).json({

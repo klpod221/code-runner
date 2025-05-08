@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const healthController = require("../controllers/health.controller");
+const { verifyToken } = require("../middleware/auth.middleware");
 
 /**
  * @swagger
@@ -27,7 +28,8 @@ router.get("/", healthController.checkHealth);
  *     summary: Check database health
  *     description: Checks if the database connection is working properly
  *     tags: [Health]
- *     security: []
+ *     security:
+ *       - bearerAuth: []
  *     responses:
  *       200:
  *         description: Database is healthy
@@ -35,6 +37,8 @@ router.get("/", healthController.checkHealth);
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/DatabaseHealthResponse'
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
  *       503:
  *         description: Database is unhealthy
  *         content:
@@ -51,7 +55,7 @@ router.get("/", healthController.checkHealth);
  *                 error:
  *                   type: string
  */
-router.get("/db", healthController.checkDbHealth);
+router.get("/db", verifyToken, healthController.checkDbHealth);
 
 /**
  * @swagger
@@ -60,7 +64,8 @@ router.get("/db", healthController.checkDbHealth);
  *     summary: Check programming languages health
  *     description: Checks if all the supported programming languages are available in the container
  *     tags: [Health]
- *     security: []
+ *     security:
+ *       - bearerAuth: []
  *     responses:
  *       200:
  *         description: Languages health status
@@ -89,8 +94,10 @@ router.get("/db", healthController.checkDbHealth);
  *                       version:
  *                         type: string
  *                         example: v20.10.0
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
  */
-router.get("/languages", healthController.checkLanguagesHealth);
+router.get("/languages", verifyToken, healthController.checkLanguagesHealth);
 
 /**
  * @swagger
@@ -99,7 +106,8 @@ router.get("/languages", healthController.checkLanguagesHealth);
  *     summary: Check full system health
  *     description: Returns detailed health information about all system components
  *     tags: [Health]
- *     security: []
+ *     security:
+ *       - bearerAuth: []
  *     responses:
  *       200:
  *         description: Full health report
@@ -107,7 +115,9 @@ router.get("/languages", healthController.checkLanguagesHealth);
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/FullHealthResponse'
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
  */
-router.get("/full", healthController.checkFullHealth);
+router.get("/full", verifyToken, healthController.checkFullHealth);
 
 module.exports = router;

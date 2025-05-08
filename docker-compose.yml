@@ -1,7 +1,36 @@
 services:
   api:
     build:
-      context: .
+      context: ./api
+      dockerfile: Dockerfile
+    container_name: code_runner_api
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./api:/app
+      - /app/node_modules
+    depends_on:
+      db:
+        condition: service_healthy
+      executor:
+        condition: service_started
+    environment:
+      - NODE_ENV=${NODE_ENV}
+      - PORT=${PORT}
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRATION=${JWT_EXPIRATION}
+      - CODE_RUNNER_URL=${CODE_RUNNER_URL}
+    command: npm run dev
+    restart: always
+
+  executor:
+    build:
+      context: ./executor
       dockerfile: Dockerfile
       args:
         - NODEJS_VERSION=${NODEJS_VERSION}
@@ -9,18 +38,14 @@ services:
         - JAVA_VERSION=${JAVA_VERSION}
         - CPP_VERSION=${CPP_VERSION}
         - C_VERSION=${C_VERSION}
-    container_name: code_runner_api
-    ports:
-      - "3000:3000"
+    container_name: code_runner_executor
     volumes:
-      - ./:/app
+      - ./executor:/app
       - /app/node_modules
-      - code_execution_tmp:/tmp/code-execution
-    depends_on:
-      db:
-        condition: service_healthy
-    command: >
-      bash -c "mkdir -p /tmp/code-execution && chmod 755 /tmp/code-execution && npm run dev"
+    environment:
+      - NODE_ENV=${NODE_ENV}
+      - MAX_EXECUTION_TIME=${MAX_EXECUTION_TIME}
+      - MAX_MEMORY=${MAX_MEMORY}
     restart: always
 
   db:

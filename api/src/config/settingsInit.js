@@ -43,16 +43,6 @@ const initSettings = async () => {
         key: "CLEANUP_CRON_SCHEDULE",
         value: "0 0 * * *",
         description: "Cron schedule for automatic cleanup"
-      },
-      {
-        key: "MAX_EXECUTION_TIME",
-        value: "10000",
-        description: "Maximum execution time in milliseconds"
-      },
-      {
-        key: "MAX_MEMORY",
-        value: "512",
-        description: "Maximum memory usage in MB"
       }
     ];
     

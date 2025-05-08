@@ -4,44 +4,23 @@ const { exec } = require("child_process");
 const { v4: uuidv4 } = require("uuid");
 const util = require("util");
 const os = require("os");
-const { settings: Settings } = require("../models");
 
 const execPromise = util.promisify(exec);
 
 // Get base directory for code execution temp files
 const BASE_TEMP_DIR = path.join(os.tmpdir(), "code-execution");
 
-// Cache for settings
-let settingsCache = {
-  MAX_EXECUTION_TIME: 10000,
-  MAX_MEMORY: 512
+// Configuration defaults
+const config = {
+  MAX_EXECUTION_TIME: parseInt(process.env.MAX_EXECUTION_TIME) || 10000,
+  MAX_MEMORY: parseInt(process.env.MAX_MEMORY) || 512
 };
-
-// Function to load settings from database
-async function loadSettings() {
-  try {
-    const dbSettings = await Settings.findAll({
-      where: {
-        key: ['MAX_EXECUTION_TIME', 'MAX_MEMORY']
-      }
-    });
-
-    dbSettings.forEach(setting => {
-      settingsCache[setting.key] = parseInt(setting.value);
-    });
-  } catch (error) {
-    console.error("Failed to load execution settings:", error.message);
-    console.error("Using default values for execution settings");
-  }
-}
-
-// Load settings on startup
-loadSettings();
 
 // Ensure base temp directory exists on startup
 (async () => {
   try {
     await fs.ensureDir(BASE_TEMP_DIR, { mode: 0o755 });
+    console.log(`Base temporary directory created: ${BASE_TEMP_DIR}`);
   } catch (err) {
     console.error(`Failed to create base temp directory: ${err.message}`);
     console.error('This may cause code execution to fail. Check directory permissions.');
@@ -54,31 +33,31 @@ const languageConfigs = {
     extension: ".js",
     compile: null,
     run: "node",
-    get timeout() { return settingsCache.MAX_EXECUTION_TIME; },
+    get timeout() { return config.MAX_EXECUTION_TIME; },
   },
   python: {
     extension: ".py",
     compile: null,
     run: "python3",
-    get timeout() { return settingsCache.MAX_EXECUTION_TIME; },
+    get timeout() { return config.MAX_EXECUTION_TIME; },
   },
   java: {
     extension: ".java",
     compile: (file) => `javac ${file}`,
     run: (className) => `java ${className}`,
-    get timeout() { return settingsCache.MAX_EXECUTION_TIME; },
+    get timeout() { return config.MAX_EXECUTION_TIME; },
   },
   cpp: {
     extension: ".cpp",
     compile: (file) => `g++ -o ${file.replace(".cpp", "")} ${file}`,
     run: (file) => `./${file.replace(".cpp", "")}`,
-    get timeout() { return settingsCache.MAX_EXECUTION_TIME; },
+    get timeout() { return config.MAX_EXECUTION_TIME; },
   },
   c: {
     extension: ".c",
     compile: (file) => `gcc -o ${file.replace(".c", "")} ${file}`,
     run: (file) => `./${file.replace(".c", "")}`,
-    get timeout() { return settingsCache.MAX_EXECUTION_TIME; },
+    get timeout() { return config.MAX_EXECUTION_TIME; },
   },
 };
 
@@ -95,7 +74,9 @@ const languageConfigs = {
 async function executeCode({ language, files, stdin = "", executionId = "" }) {
   // Validate language support
   if (!languageConfigs[language]) {
-    throw new Error(`Unsupported language: ${language}`);
+    const error = new Error(`Unsupported language: ${language}`);
+    error.status = 400;
+    throw error;
   }
 
   // Create a unique execution ID and temp directory
@@ -146,7 +127,7 @@ async function executeCode({ language, files, stdin = "", executionId = "" }) {
     }
 
     // Get language configuration
-    const config = languageConfigs[language];
+    const langConfig = languageConfigs[language];
 
     // Initialize result structure
     let result = {
@@ -163,14 +144,14 @@ async function executeCode({ language, files, stdin = "", executionId = "" }) {
     const startTime = process.hrtime();
 
     // For compiled languages, compile the code first
-    if (config.compile) {
+    if (langConfig.compile) {
       try {
-        const compileCmd = config.compile(mainFile.name);
+        const compileCmd = langConfig.compile(mainFile.name);
         console.log(`[${execution}] Compiling: ${compileCmd}`);
 
         const { stdout, stderr } = await execPromise(compileCmd, {
           cwd: tempDir,
-          timeout: config.timeout,
+          timeout: langConfig.timeout,
         });
 
         result.compilationOutput = stdout || "";
@@ -197,13 +178,13 @@ async function executeCode({ language, files, stdin = "", executionId = "" }) {
       if (language === "java") {
         // For Java, extract class name from file name
         const className = path.basename(mainFile.name, ".java");
-        runCmd = config.run(className);
-      } else if (config.compile) {
+        runCmd = langConfig.run(className);
+      } else if (langConfig.compile) {
         // For other compiled languages
-        runCmd = config.run(mainFile.name);
+        runCmd = langConfig.run(mainFile.name);
       } else {
         // For interpreted languages
-        runCmd = `${config.run} ${mainFile.name}`;
+        runCmd = `${langConfig.run} ${mainFile.name}`;
       }
 
       // Add stdin redirection if provided
@@ -212,12 +193,12 @@ async function executeCode({ language, files, stdin = "", executionId = "" }) {
       }
 
       console.log(
-        `[${execution}] Executing: ${runCmd} with timeout: ${config.timeout}ms`
+        `[${execution}] Executing: ${runCmd} with timeout: ${langConfig.timeout}ms`
       );
 
       const { stdout, stderr } = await execPromise(runCmd, {
         cwd: tempDir,
-        timeout: config.timeout,
+        timeout: langConfig.timeout,
       });
 
       // Calculate execution time
@@ -255,11 +236,13 @@ async function executeCode({ language, files, stdin = "", executionId = "" }) {
 
     return result;
   } catch (error) {
+    console.error(`[${execution}] Error during code execution: ${error.message}`);
     throw error;
   } finally {
     // Clean up the temporary directory
     try {
       await fs.remove(tempDir);
+      console.log(`[${execution}] Cleaned up temp directory: ${tempDir}`);
     } catch (error) {
       console.error(
         `[${execution}] Failed to clean up temp directory: ${error.message}`
@@ -268,14 +251,17 @@ async function executeCode({ language, files, stdin = "", executionId = "" }) {
   }
 }
 
-// Expose a function to refresh settings
-async function refreshSettings() {
-  await loadSettings();
-  return settingsCache;
+
+/**
+ * Get supported programming languages
+ * 
+ * @returns {Array<string>} List of supported language names
+ */
+function getSupportedLanguages() {
+  return Object.keys(languageConfigs);
 }
 
 module.exports = {
   executeCode,
-  supportedLanguages: Object.keys(languageConfigs),
-  refreshSettings
+  getSupportedLanguages
 };

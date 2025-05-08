@@ -9,16 +9,41 @@
 
 Code Runner API provides a platform for executing code in different programming languages through a RESTful API. It's designed with security, scalability, and performance in mind, making it suitable for educational platforms, coding challenges, and automated assessment systems.
 
+The architecture consists of two separate services:
+1. **API Service**: Handles user authentication, request validation, and database operations
+2. **Code Runner Service**: Executes code in isolated environments for enhanced security
+
 ## Features
 
 - **Multi-language Support**: Run code in multiple programming languages including JavaScript, Python, Java, C, C++, and more
-- **Secure Execution**: Code runs in isolated environments to prevent system compromise
+- **Secure Execution**: Code runs in isolated environments with a non-root user to prevent system compromise
 - **Test Case Support**: Execute code against predefined test cases and validate outputs
 - **API Documentation**: Comprehensive Swagger documentation
 - **Authentication**: JWT-based authentication system
 - **Rate Limiting**: Configurable request rate limiting to prevent abuse
 - **Database Integration**: PostgreSQL database for storing user data, execution results, and settings
 - **Customizable Settings**: Dynamic settings management via API
+- **Service Architecture**: Separated API and code execution services for enhanced security and scalability
+
+## Architecture
+
+The system is split into two services:
+
+1. **API Service** (port 3000)
+   - User-facing REST API
+   - User authentication and authorization
+   - Request validation
+   - Database access
+   - API documentation
+
+2. **Code Runner Service** (port 3001)
+   - Isolated code execution environment
+   - Runs as non-root user for security
+   - Supports multiple programming languages
+   - Handles compilation and execution
+   - Test case evaluation
+
+These services communicate over HTTP, providing enhanced security and scalability.
 
 ## Tech Stack
 
@@ -67,14 +92,15 @@ This method is not secure, because it runs the code on your local machine. It is
    cd code-runner
    ```
 
-2. Install dependencies:
+2. Install dependencies for both services:
    ```bash
-   npm install
+   cd api && npm install
+   cd ../code_runner && npm install
    ```
 
 3. Set up your PostgreSQL database
 
-4. Intall all dependencies for code execution like jdk, node, python, gcc, g++, etc. on your local machine.
+4. Install all dependencies for code execution like jdk, node, python, gcc, g++, etc. on your local machine.
 
    For example, on Ubuntu:
    ```bash
@@ -90,13 +116,18 @@ This method is not secure, because it runs the code on your local machine. It is
 
 6. Run database migrations:
    ```bash
+   cd api
    npm run migrate
    npm run seed
    ```
 
-7. Start the development server:
+7. Start both development servers:
    ```bash
-   npm run dev
+   # In terminal 1
+   cd api && npm run dev
+   
+   # In terminal 2
+   cd code_runner && npm run dev
    ```
 
 ## API Endpoints
@@ -145,12 +176,18 @@ For detailed API documentation, visit the Swagger UI at `/docs` when the server 
 
 ## Available Scripts
 
+### API Service
 - `npm start` - Start the production server
 - `npm run dev` - Start the development server with hot-reload
 - `npm test` - Run tests
 - `npm run migrate` - Run database migrations
 - `npm run seed` - Seed the database with initial data
 - `npm run lint` - Run ESLint
+
+### Code Runner Service
+- `npm start` - Start the production server
+- `npm run dev` - Start the development server with hot-reload
+- `npm test` - Run tests
 
 ## Environment Variables
 
@@ -173,6 +210,13 @@ DB_NAME=code_runner
 JWT_SECRET=your_jwt_secret_key_change_in_production
 JWT_EXPIRATION=24h
 
+# Code Runner Service
+CODE_RUNNER_URL=http://code_runner:3001
+
+# Code Execution Settings
+MAX_EXECUTION_TIME=10000
+MAX_MEMORY=512
+
 # Language Versions
 # These are used for health checks and version reporting
 NODEJS_VERSION=20
@@ -180,7 +224,6 @@ PYTHON_VERSION=3
 JAVA_VERSION=17
 CPP_VERSION=11
 C_VERSION=11
-
 ```
 
 ## License

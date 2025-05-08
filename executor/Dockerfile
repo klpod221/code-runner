@@ -42,6 +42,9 @@ RUN apt-get update && apt-get install -y musl musl-dev && \
 # Install npm (latest version)
 RUN npm install -g npm@latest
 
+# Create a non-root user for running the code execution service
+RUN groupadd -r coderunner && useradd -r -g coderunner -m -d /home/coderunner coderunner
+
 # Set working directory
 WORKDIR /app
 
@@ -54,11 +57,16 @@ RUN npm install
 # Copy the application code
 COPY . .
 
-# Create directory for code execution
-RUN mkdir -p /tmp/code-execution
+# Create directory for code execution with proper permissions
+RUN mkdir -p /tmp/code-execution && \
+    chmod 755 /tmp/code-execution && \
+    chown -R coderunner:coderunner /tmp/code-execution
 
-# Expose the port the app runs on
-EXPOSE 3000
+# Switch to non-root user
+USER coderunner
+
+# Expose the port the app runs on - always 8080
+EXPOSE 8080
 
 # Start the application
 CMD ["npm", "start"]

@@ -1,5 +1,5 @@
 const { Sequelize } = require("sequelize");
-const dbConfig = require("../config/db.config");
+const dbConfig = require("../config/db.config.js");
 
 // Create Sequelize instance
 const sequelize = new Sequelize(
@@ -25,9 +25,9 @@ db.Sequelize = Sequelize;
 db.sequelize = sequelize;
 
 // Import models
-db.User = require("./user.model")(sequelize, Sequelize);
-db.CodeExecution = require("./codeExecution.model")(sequelize, Sequelize);
-db.Language = require("./language.model")(sequelize, Sequelize);
+db.User = require("./user.model.js")(sequelize, Sequelize);
+db.CodeExecution = require("./codeExecution.model.js")(sequelize, Sequelize);
+db.Language = require("./language.model.js")(sequelize, Sequelize);
 db.testCase = require("./testCase.model.js")(sequelize, Sequelize);
 db.settings = require("./settings.model.js")(sequelize, Sequelize);
 

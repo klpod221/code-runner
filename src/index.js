@@ -102,6 +102,7 @@ app.use(
   swaggerUi.setup(swaggerSpecs, {
     explorer: true,
     customCss: ".swagger-ui .topbar { display: none }",
+    customfavIcon: "/favicon.ico",
     customSiteTitle: "Code Runner API Documentation",
   })
 );
